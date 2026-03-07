@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
   const model = env.DASHSCOPE_MODEL ?? 'qwen-plus'
 
   return {
-    base: '/bagua/',
+    base: '/',
     plugins: [react()],
     json: { stringify: true },
     define: {
