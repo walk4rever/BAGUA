@@ -69,6 +69,7 @@ export default async function handler(request: Request) {
         const reader = response.body!.getReader();
         const decoder = new TextDecoder();
         let sseBuffer = '';
+        let streamCompleted = false;
 
         try {
           while (true) {
@@ -84,7 +85,13 @@ export default async function handler(request: Request) {
               if (!trimmed.startsWith('data:')) continue;
 
               const rawPayload = trimmed.slice(5).trim();
-              if (!rawPayload || rawPayload === '[DONE]') continue;
+              if (!rawPayload) continue;
+              if (rawPayload === '[DONE]') {
+                streamCompleted = true;
+                controller.enqueue(encoder.encode('event: done\ndata: {}\n\n'));
+                await reader.cancel();
+                break;
+              }
 
               try {
                 const parsed = JSON.parse(rawPayload) as {
@@ -99,9 +106,15 @@ export default async function handler(request: Request) {
                 // Skip malformed upstream SSE chunks.
               }
             }
+
+            if (streamCompleted) {
+              break;
+            }
           }
 
-          controller.enqueue(encoder.encode('event: done\ndata: {}\n\n'));
+          if (!streamCompleted) {
+            controller.enqueue(encoder.encode('event: done\ndata: {}\n\n'));
+          }
         } catch (error) {
           console.error('Stream processing error:', error);
           controller.enqueue(
