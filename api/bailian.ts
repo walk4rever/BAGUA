@@ -13,6 +13,8 @@ const jsonResponse = (body: Record<string, string>, status: number) =>
     },
   });
 
+const encoder = new TextEncoder();
+
 export default async function handler(request: Request) {
   if (request.method !== 'POST') {
     return jsonResponse({ error: 'Method Not Allowed' }, 405);
@@ -44,6 +46,7 @@ export default async function handler(request: Request) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(55000),
     });
 
     if (!response.ok) {
@@ -61,11 +64,62 @@ export default async function handler(request: Request) {
       return jsonResponse({ error: 'Upstream returned empty body' }, 502);
     }
 
-    return new Response(response.body, {
-      status: response.status,
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = response.body!.getReader();
+        const decoder = new TextDecoder();
+        let sseBuffer = '';
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            sseBuffer += decoder.decode(value, { stream: true });
+            const lines = sseBuffer.split('\n');
+            sseBuffer = lines.pop() ?? '';
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed.startsWith('data:')) continue;
+
+              const rawPayload = trimmed.slice(5).trim();
+              if (!rawPayload || rawPayload === '[DONE]') continue;
+
+              try {
+                const parsed = JSON.parse(rawPayload) as {
+                  choices?: Array<{ delta?: { content?: string } }>
+                };
+                const delta = parsed.choices?.[0]?.delta?.content;
+                if (!delta) continue;
+                controller.enqueue(
+                  encoder.encode(`event: delta\ndata: ${JSON.stringify(delta)}\n\n`)
+                );
+              } catch {
+                // Skip malformed upstream SSE chunks.
+              }
+            }
+          }
+
+          controller.enqueue(encoder.encode('event: done\ndata: {}\n\n'));
+        } catch (error) {
+          console.error('Stream processing error:', error);
+          controller.enqueue(
+            encoder.encode(
+              `event: error\ndata: ${JSON.stringify({
+                error: 'Stream interrupted',
+              })}\n\n`
+            )
+          );
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
       headers: {
-        'Content-Type':
-          response.headers.get('content-type') ?? 'text/event-stream; charset=utf-8',
+        'Content-Type': 'text/event-stream; charset=utf-8',
         'Cache-Control': 'no-cache, no-transform',
         Connection: 'keep-alive',
       },

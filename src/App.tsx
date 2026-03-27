@@ -230,6 +230,41 @@ const parseSseLine = (line: string): string | null => {
   }
 }
 
+type ParsedStreamEvent =
+  | { type: 'delta'; content: string }
+  | { type: 'done' }
+  | { type: 'error'; message: string }
+
+const parseStreamEvent = (
+  eventName: string,
+  data: string
+): ParsedStreamEvent | null => {
+  if (!data) return null
+  if (eventName === 'delta') {
+    try {
+      const content = JSON.parse(data) as string
+      return typeof content === 'string' ? { type: 'delta', content } : null
+    } catch {
+      return null
+    }
+  }
+  if (eventName === 'done') {
+    return { type: 'done' }
+  }
+  if (eventName === 'error') {
+    try {
+      const payload = JSON.parse(data) as { error?: string }
+      return {
+        type: 'error',
+        message: payload.error ?? 'stream_error',
+      }
+    } catch {
+      return { type: 'error', message: 'stream_error' }
+    }
+  }
+  return null
+}
+
 const extractJsonInterpretation = (payload: unknown): string | null => {
   if (!payload || typeof payload !== 'object') return null
   const parsed = payload as {
@@ -304,31 +339,62 @@ const requestInterpretation = async (
   const decoder = new TextDecoder('utf-8')
   let buffer = ''
   let content = ''
+  let currentEvent = ''
+  let doneSeen = false
   while (true) {
     const { value, done } = await reader.read()
+    if (value) {
+      buffer += decoder.decode(value, { stream: !done })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+      for (const rawLine of lines) {
+        const line = rawLine.trim()
+        if (!line) {
+          currentEvent = ''
+          continue
+        }
+        if (line.startsWith('event:')) {
+          currentEvent = line.slice(6).trim()
+          continue
+        }
+        if (line.startsWith('data:')) {
+          if (!currentEvent) {
+            const delta = parseSseLine(line)
+            if (delta) {
+              content += delta
+              onChunk?.(content)
+            }
+            continue
+          }
+          const parsedEvent = parseStreamEvent(
+            currentEvent,
+            line.slice(5).trim()
+          )
+          if (!parsedEvent) continue
+          if (parsedEvent.type === 'delta') {
+            content += parsedEvent.content
+            onChunk?.(content)
+          } else if (parsedEvent.type === 'done') {
+            doneSeen = true
+          } else if (parsedEvent.type === 'error') {
+            throw new Error(parsedEvent.message)
+          }
+        }
+      }
+    }
     if (done) {
       break
     }
-    buffer += decoder.decode(value, { stream: true })
-    let index = buffer.indexOf('\n')
-    while (index !== -1) {
-      const line = buffer.slice(0, index).trim()
-      buffer = buffer.slice(index + 1)
-      const delta = parseSseLine(line)
-      if (delta) {
-        content += delta
-        onChunk?.(content)
-      }
-      index = buffer.indexOf('\n')
+  }
+  if (buffer.trim()) {
+    const line = buffer.trim()
+    const delta = parseSseLine(line)
+    if (delta) {
+      content += delta
+      onChunk?.(content)
     }
   }
-  // 处理循环结束后 buffer 中可能残留的最后一行
-  const delta = parseSseLine(buffer.trim())
-  if (delta) {
-    content += delta
-    onChunk?.(content)
-  }
-  if (!content) {
+  if (!content && !doneSeen) {
     throw new Error('interpretation_empty')
   }
   return content
@@ -413,16 +479,11 @@ function App() {
   const [result, setResult] = useState<HexagramResult | null>(null)
   const [isCasting, setIsCasting] = useState(false)
   const [isRetrying, setIsRetrying] = useState(false)
-  const timeoutRef = useRef<number | null>(null)
   const castIdRef = useRef(0)
 
   const hasResult = Boolean(result?.entry)
 
   const resetCast = () => {
-    if (timeoutRef.current) {
-      window.clearTimeout(timeoutRef.current)
-      timeoutRef.current = null
-    }
     setIsCasting(false)
     setResult(null)
     castIdRef.current += 1
@@ -444,20 +505,21 @@ function App() {
     const { number, entry } = deriveHexagram(lines)
     const { number: changedNumber, entry: changedEntry } = deriveHexagram(changedLines)
     setIsCasting(true)
-    const delay = new Promise<void>((resolve) => {
-      timeoutRef.current = window.setTimeout(() => {
-        timeoutRef.current = null
-        resolve()
-      }, 3000)
+    setResult({
+      lines,
+      number,
+      entry,
+      changedLines,
+      changedNumber,
+      changedEntry,
+      interpretation: '解读生成中...',
     })
     try {
-      let latest = ''
-      const streamPromise = requestInterpretation(
+      const finalText = await requestInterpretation(
         lines,
         entry,
         changedEntry,
         (partial) => {
-          latest = partial
           if (castId === castIdRef.current) {
             setResult((prev) =>
               prev ? { ...prev, interpretation: partial } : prev
@@ -465,28 +527,12 @@ function App() {
           }
         }
       )
-      await delay
       if (castId !== castIdRef.current) {
         return
       }
-      const nextResult = {
-        lines,
-        number,
-        entry,
-        changedLines,
-        changedNumber,
-        changedEntry,
-        interpretation: latest || '解读生成中...',
-      }
-      setResult(nextResult)
       setIsCasting(false)
-      const finalText = await streamPromise
-      if (castId !== castIdRef.current) {
-        return
-      }
       setResult((prev) => (prev ? { ...prev, interpretation: finalText } : prev))
     } catch (error) {
-      await delay
       if (castId !== castIdRef.current) {
         return
       }
