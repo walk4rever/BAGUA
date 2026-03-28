@@ -1,3 +1,5 @@
+export const config = { runtime: 'edge' };
+
 const normalizeChatCompletionsUrl = (rawBaseUrl: string) => {
   const trimmed = rawBaseUrl.trim().replace(/\/+$/, '');
   return trimmed.endsWith('/chat/completions')
@@ -69,7 +71,7 @@ export default async function handler(request: Request) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(55000),
+      signal: AbortSignal.timeout(25000),
     });
 
     if (!response.ok) {

@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "api/llm.ts": {
-      "maxDuration": 60
+      "maxDuration": 30
     }
   },
   "regions": ["hkg1"],
