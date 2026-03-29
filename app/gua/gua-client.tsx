@@ -398,12 +398,6 @@ const tossLine = (): Line => {
   throw new Error(`tossLine: unexpected coin sum ${sum}, expected 6–9`)
 }
 
-const yaoLabel = (index: number) => {
-  if (index === 0) return '初爻'
-  if (index === 5) return '上爻'
-  return `第${index + 1}爻`
-}
-
 const wrapCanvasText = (
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -562,9 +556,12 @@ const generateGuaShareCard = async (result: HexagramResult, interpretation: Pars
 
   ctx.fillStyle = '#6b5f54'
   ctx.font = '400 28px "Noto Serif SC", serif'
+  ctx.textAlign = 'left'
   ctx.fillText(`本卦：${baseName}`, padding, y)
   if (hasChangedHexagram && changedName) {
-    ctx.fillText(`变卦：${changedName}`, padding + 340, y)
+    ctx.textAlign = 'right'
+    ctx.fillText(`变卦：${changedName}`, w - padding, y)
+    ctx.textAlign = 'left'
   }
   y += 58
 
@@ -597,49 +594,32 @@ const generateGuaShareCard = async (result: HexagramResult, interpretation: Pars
     y += panelHeight + 28
   }
 
-  const drawGuaAndYao = (
-    title: string,
+  const drawHexagramSection = (
+    sectionTitle: string,
     entry: HexagramEntry | null,
     lines: Line[],
     highlightChanging: boolean
   ) => {
-    drawSectionTitle(`${title}卦象`)
+    drawSectionTitle(sectionTitle)
     drawHexagramPanel(lines)
 
-    drawParagraph('卦辞', 30, '#352d27', 10)
-    drawParagraph(entry?.guaCi ?? '暂无卦辞', 29, '#4d433a', 22)
+    drawParagraph(entry?.guaCi ?? '暂无卦辞', 29, '#4d433a', 18)
 
     drawParagraph('爻辞', 30, '#352d27', 10)
     entry?.yaoCi.forEach((text, index) => {
       const line = lines[index]
       const isChanging = highlightChanging && (line?.changing ?? false)
-      const prefix = `${yaoLabel(index)}${isChanging ? '（动）' : ''}`
-      drawParagraph(`${prefix}：${text}`, 27, isChanging ? '#7e3f34' : '#4d433a', 10)
+      const suffix = isChanging ? '（动爻）' : ''
+      drawParagraph(`${text}${suffix}`, 27, isChanging ? '#7e3f34' : '#4d433a', 10)
     })
-    y += 10
+    y += 12
   }
 
-  drawGuaAndYao('本卦', result.entry, result.lines, true)
+  drawHexagramSection('本卦卦象', result.entry, result.lines, true)
 
   if (hasChangedHexagram) {
-    drawGuaAndYao('变卦', result.changedEntry, result.changedLines, false)
+    drawHexagramSection('变卦卦象', result.changedEntry, result.changedLines, false)
   }
-
-  drawSectionTitle('动爻说明')
-  const movingLines = result.lines
-    .map((line, index) => ({ line, index }))
-    .filter((item) => item.line.changing)
-
-  if (movingLines.length === 0) {
-    drawParagraph('本卦无动爻，为静卦。此时宜守正、稳步而行，以卦辞为核心指引。', 27, '#4d433a', 12)
-  } else {
-    movingLines.forEach(({ line, index }) => {
-      const changedState = line.yin ? '由阴变阳' : '由阳变阴'
-      const yaoCiText = result.entry?.yaoCi[index] ?? '暂无爻辞'
-      drawParagraph(`${yaoLabel(index)}：${changedState}。${yaoCiText}`, 27, '#4d433a', 12)
-    })
-  }
-  y += 10
 
   drawSectionTitle('卦象解读')
   if (interpretation.items.length) {
