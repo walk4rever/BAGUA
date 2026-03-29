@@ -3,7 +3,7 @@ import { streamText } from 'ai'
 import type { ModelMessage, ImagePart, TextPart } from 'ai'
 
 export const runtime = 'nodejs'
-export const maxDuration = 60
+export const maxDuration = 300
 
 type RawPart =
   | { type: 'text'; text: string }
