@@ -32,13 +32,6 @@ const features = [
     desc: '任何古文，一键白话，快速读懂其中意思',
     ready: false,
   },
-  {
-    href: '#',
-    icon: '义',
-    title: '精读',
-    desc: '围绕一段经典，展开更深入的背景与意涵',
-    ready: false,
-  },
 ]
 
 export default function Home() {
