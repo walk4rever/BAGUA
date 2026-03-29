@@ -297,27 +297,30 @@ const generateShareCard = async (
   let y = 0
 
   if (usePhotoTemplate && image) {
-    // Photo: full-width, cover-crop, fades into background at bottom
+    // Photo: contain (no cropping), adaptive height, full-width when possible
     const photo = await loadImage(image.dataUrl)
-    const photoH = 560
 
-    ctx.save()
-    ctx.beginPath()
-    ctx.rect(0, 0, w, photoH)
-    ctx.clip()
+    // Natural height if scaled to full card width
+    const naturalH = Math.round(photo.height * (w / photo.width))
+    // Cap so text still has room; very tall portraits will be contained within cap
+    const maxPhotoH = 800
+    const photoH = Math.min(naturalH, maxPhotoH)
 
-    const scale = Math.max(w / photo.width, photoH / photo.height)
+    // Contain within (w × photoH): always shows full photo, no cropping
+    const scale = Math.min(w / photo.width, photoH / photo.height)
     const drawW = photo.width * scale
     const drawH = photo.height * scale
-    ctx.drawImage(photo, (w - drawW) / 2, (photoH - drawH) / 2, drawW, drawH)
+    const drawX = (w - drawW) / 2
+    const drawY = (photoH - drawH) / 2
+
+    ctx.drawImage(photo, drawX, drawY, drawW, drawH)
 
     // Gradient fade photo bottom into background
-    const fade = ctx.createLinearGradient(0, photoH - 160, 0, photoH)
+    const fade = ctx.createLinearGradient(0, photoH - 120, 0, photoH)
     fade.addColorStop(0, 'rgba(242, 235, 224, 0)')
-    fade.addColorStop(1, 'rgba(242, 235, 224, 1)')
+    fade.addColorStop(1, 'rgba(242, 235, 224, 0.6)')
     ctx.fillStyle = fade
     ctx.fillRect(0, 0, w, photoH)
-    ctx.restore()
 
     y = photoH + 64
   } else {
