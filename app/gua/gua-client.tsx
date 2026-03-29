@@ -486,26 +486,34 @@ const drawHexagramOnCanvas = (
   x: number,
   y: number,
   width: number,
-  lineHeight: number,
-  gap: number
+  height: number
 ) => {
+  // 与页面里的 SVG 卦象一致：viewBox 160x120，阴爻(58+58) 阳爻(140)
   const displayLines = [...lines].reverse()
-  const segmentGap = Math.round(width * 0.16)
-  const halfWidth = (width - segmentGap) / 2
+  const baseW = 160
+  const baseH = 120
+  const scale = Math.min(width / baseW, height / baseH)
+  const drawW = baseW * scale
+  const drawH = baseH * scale
+  const offsetX = x + (width - drawW) / 2
+  const offsetY = y + (height - drawH) / 2
 
   displayLines.forEach((line, index) => {
-    const lineY = y + index * (lineHeight + gap)
     const fill = line.changing ? '#bf5b4a' : '#466f68'
+    const rectY = offsetY + (6 + index * 18) * scale
+    const rectH = 10 * scale
+    const radius = 5 * scale
+
+    ctx.fillStyle = fill
     if (line.yin) {
-      ctx.fillStyle = fill
-      drawRoundedRect(ctx, x, lineY, halfWidth, lineHeight, lineHeight / 2)
+      drawRoundedRect(ctx, offsetX + 10 * scale, rectY, 58 * scale, rectH, radius)
       ctx.fill()
-      drawRoundedRect(ctx, x + halfWidth + segmentGap, lineY, halfWidth, lineHeight, lineHeight / 2)
+      drawRoundedRect(ctx, offsetX + 92 * scale, rectY, 58 * scale, rectH, radius)
       ctx.fill()
       return
     }
-    ctx.fillStyle = fill
-    drawRoundedRect(ctx, x, lineY, width, lineHeight, lineHeight / 2)
+
+    drawRoundedRect(ctx, offsetX + 10 * scale, rectY, 140 * scale, rectH, radius)
     ctx.fill()
   })
 }
@@ -579,17 +587,13 @@ const generateGuaShareCard = async (result: HexagramResult, interpretation: Pars
     y += gapAfter
   }
 
-  const drawHexagramPanel = (label: string, lines: Line[]) => {
-    const panelHeight = 272
+  const drawHexagramPanel = (lines: Line[]) => {
+    const panelHeight = 250
     ctx.fillStyle = 'rgba(139, 74, 60, 0.1)'
     drawRoundedRect(ctx, padding, y, contentW, panelHeight, 26)
     ctx.fill()
 
-    ctx.fillStyle = '#5e5146'
-    ctx.font = '600 30px "Noto Serif SC", serif'
-    ctx.fillText(label, padding + 44, y + 38)
-
-    drawHexagramOnCanvas(ctx, lines, padding + 44, y + 92, contentW - 88, 18, 16)
+    drawHexagramOnCanvas(ctx, lines, padding + 44, y + 30, contentW - 88, panelHeight - 60)
     y += panelHeight + 28
   }
 
@@ -599,8 +603,8 @@ const generateGuaShareCard = async (result: HexagramResult, interpretation: Pars
     lines: Line[],
     highlightChanging: boolean
   ) => {
-    drawSectionTitle(title)
-    drawHexagramPanel('卦象', lines)
+    drawSectionTitle(`${title}卦象`)
+    drawHexagramPanel(lines)
 
     drawParagraph('卦辞', 30, '#352d27', 10)
     drawParagraph(entry?.guaCi ?? '暂无卦辞', 29, '#4d433a', 22)
