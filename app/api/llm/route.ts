@@ -26,16 +26,34 @@ const hasVisionInput = (messages: RawMessage[]): boolean =>
     (m) => Array.isArray(m.content) && m.content.some((p) => p.type === 'image_url')
   )
 
+const dataUrlToUint8Array = (dataUrl: string): { data: Uint8Array; mimeType: string } => {
+  const comma = dataUrl.indexOf(',')
+  const header = dataUrl.slice(0, comma)
+  const mimeType = header.match(/:(.*?);/)?.[1] ?? 'image/jpeg'
+  const binary = atob(dataUrl.slice(comma + 1))
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return { data: bytes, mimeType }
+}
+
 const toModelMessages = (messages: RawMessage[]): ModelMessage[] =>
   messages.map((msg) => {
     if (typeof msg.content === 'string') {
       return { role: msg.role, content: msg.content } as ModelMessage
     }
-    const parts: (TextPart | ImagePart)[] = msg.content.map((part) =>
-      part.type === 'image_url'
-        ? { type: 'image' as const, image: part.image_url.url }
-        : { type: 'text' as const, text: part.text }
-    )
+    const parts: (TextPart | ImagePart)[] = msg.content.map((part) => {
+      if (part.type === 'image_url') {
+        const url = part.image_url.url
+        if (url.startsWith('data:')) {
+          const { data, mimeType } = dataUrlToUint8Array(url)
+          return { type: 'image' as const, image: data, mimeType }
+        }
+        return { type: 'image' as const, image: new URL(url) }
+      }
+      return { type: 'text' as const, text: part.text }
+    })
     return { role: msg.role, content: parts } as ModelMessage
   })
 
