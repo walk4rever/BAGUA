@@ -157,14 +157,15 @@
 ## 模型与配置
 
 ### 必须确认
-- [ ] 当前 `AI_MODEL` 是否支持 vision / image input
+- [ ] 单独配置 `AI_VISION_MODEL`，供 image / video 请求使用
 - [ ] 当前 `AI_API_BASE_URL` 是否兼容多模态消息格式
 - [ ] 图片上传大小限制
 - [ ] 是否需要前端压缩图片
 
 ### 推荐策略
-- [ ] 若当前模型支持多模态，优先复用同一 provider
-- [ ] 若不支持，先补最小可用的 vision provider，不要重构整套模型层
+- [ ] 保留 `AI_PRIMARY_MODEL` 负责纯文本，单独用 `AI_VISION_MODEL` 负责 image / video
+- [ ] 优先复用同一 provider，避免过早做复杂 provider 抽象
+- [ ] 若当前 provider 不支持 vision，再补最小可用的 vision provider
 
 原则：
 

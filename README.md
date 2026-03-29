@@ -112,14 +112,14 @@ npm run dev
 ```bash
 AI_API_KEY=your-api-key
 AI_API_BASE_URL=https://your-provider.example.com/v1
-AI_MODEL=your-text-model
-AI_VISION_MODEL=your-vision-model   # 可选；照片寻句建议配置
+AI_PRIMARY_MODEL=your-text-model
+AI_VISION_MODEL=your-vision-model   # 推荐单独配置，供 image / video 请求使用
 ```
 
 说明：
-- `AI_MODEL`：默认文本模型，用于寻句、问卦等文本能力
-- `AI_VISION_MODEL`：视觉模型；当寻句请求里包含图片时优先使用
-- 若未配置 `AI_VISION_MODEL`，有图请求会回退到 `AI_MODEL`
+- `AI_PRIMARY_MODEL`：默认/主文本模型，用于寻句、问卦等纯文本能力
+- `AI_VISION_MODEL`：单独的视觉模型；当请求里包含 image / video 输入时优先使用
+- 若未配置 `AI_VISION_MODEL`，多模态请求会回退到 `AI_PRIMARY_MODEL`
 
 ---
 

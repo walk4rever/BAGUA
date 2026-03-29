@@ -109,10 +109,30 @@ const extractContent = (payload: unknown): string | null => {
   )
 }
 
+const payloadHasVisionInput = (value: unknown): boolean => {
+  if (Array.isArray(value)) {
+    return value.some((item) => payloadHasVisionInput(item))
+  }
+  if (!value || typeof value !== 'object') return false
+
+  const record = value as Record<string, unknown>
+  if (
+    record.type === 'image_url' ||
+    record.type === 'input_image' ||
+    record.type === 'video_url' ||
+    record.type === 'input_video'
+  ) {
+    return true
+  }
+
+  return Object.values(record).some((nested) => payloadHasVisionInput(nested))
+}
+
 export async function POST(request: Request) {
   const apiKey = process.env.AI_API_KEY
   const rawBaseUrl = process.env.AI_API_BASE_URL
-  const defaultModel = process.env.AI_MODEL
+  const primaryModel = process.env.AI_PRIMARY_MODEL?.trim()
+  const visionModel = process.env.AI_VISION_MODEL?.trim() || primaryModel
 
   if (!apiKey) {
     return jsonResponse({ error: 'AI_API_KEY is not configured' }, 500)
@@ -120,8 +140,8 @@ export async function POST(request: Request) {
   if (!rawBaseUrl) {
     return jsonResponse({ error: 'AI_API_BASE_URL is not configured' }, 500)
   }
-  if (!defaultModel) {
-    return jsonResponse({ error: 'AI_MODEL is not configured' }, 500)
+  if (!primaryModel) {
+    return jsonResponse({ error: 'AI_PRIMARY_MODEL is not configured' }, 500)
   }
   const baseUrl = normalizeChatCompletionsUrl(rawBaseUrl)
 
@@ -137,10 +157,13 @@ export async function POST(request: Request) {
   }
 
   const requestedModel = (payload as { model?: unknown }).model
+  const hasVisionInput = payloadHasVisionInput(payload)
   const resolvedModel =
     typeof requestedModel === 'string' && requestedModel.trim()
       ? requestedModel.trim()
-      : defaultModel
+      : hasVisionInput
+        ? visionModel
+        : primaryModel
 
   const upstreamPayload = {
     ...payload,

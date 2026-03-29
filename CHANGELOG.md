@@ -1,8 +1,8 @@
 # Changelog
 
 ## v0.6.1 - 2026-03-29
-- 简化 AI 模型配置：前端不再依赖 `NEXT_PUBLIC_AI_MODEL`，统一由服务端 API 路由读取 `AI_MODEL`
-- `/api/llm` 在请求未显式传入模型时自动回退到 `AI_MODEL`，减少重复配置与前端暴露
+- 简化 AI 模型配置：前端不再依赖 `NEXT_PUBLIC_AI_MODEL`，统一由服务端 API 路由读取主模型环境变量
+- `/api/llm` 在请求未显式传入模型时自动回退到主模型环境变量，减少重复配置与前端暴露
 - README 与本地环境变量示例同步更新，仅保留服务端所需的 AI 配置
 
 ## v0.5.6 - 2026-03-28
@@ -25,7 +25,7 @@
 ## v0.5.1 - 2026-03-27
 - 模型配置统一为 `AI_*` 环境变量
 - 本地 Vite 代理与 Vercel Serverless 代理统一补全 `/chat/completions`
-- 前端解读请求默认模型改为通过 `AI_MODEL` 配置
+- 前端解读请求默认模型改为通过服务端主模型配置
 
 ## v0.2.0 - 2026-02-25
 - 接入兼容 OpenAI Chat Completions 的模型接口，支持通过环境变量配置模型与 Base URL
