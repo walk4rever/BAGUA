@@ -16,6 +16,30 @@
   box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.35);
 }
 
+.introPanel {
+  padding: 1.1rem 1.25rem;
+  border-radius: 20px;
+  background: rgba(20, 16, 13, 0.62);
+  border: 1px solid rgba(194, 163, 110, 0.16);
+}
+
+.introLead,
+.introSub {
+  margin: 0;
+  color: rgba(248, 233, 209, 0.82);
+}
+
+.introLead {
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.introSub {
+  margin-top: 0.45rem;
+  font-size: 0.92rem;
+  color: rgba(248, 233, 209, 0.68);
+}
+
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -62,21 +86,31 @@
   margin: 0;
   font-size: 0.9rem;
   color: rgba(248, 233, 209, 0.7);
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
+.emphasis,
 .badge {
   display: inline-block;
   margin-left: 0.5rem;
   padding: 0.1rem 0.5rem;
   border-radius: 999px;
-  background: rgba(194, 163, 110, 0.15);
-  border: 1px solid rgba(194, 163, 110, 0.3);
   font-size: 0.65rem;
   font-weight: 400;
-  color: rgba(248, 233, 209, 0.6);
   vertical-align: middle;
   letter-spacing: 0.04rem;
+}
+
+.emphasis {
+  background: rgba(120, 200, 150, 0.14);
+  border: 1px solid rgba(120, 200, 150, 0.32);
+  color: rgba(205, 237, 215, 0.85);
+}
+
+.badge {
+  background: rgba(194, 163, 110, 0.15);
+  border: 1px solid rgba(194, 163, 110, 0.3);
+  color: rgba(248, 233, 209, 0.6);
 }
 
 .grid .card:first-child {
@@ -84,6 +118,10 @@
 }
 
 @media (max-width: 480px) {
+  .introPanel {
+    padding: 0.9rem;
+  }
+
   .grid {
     grid-template-columns: 1fr;
   }

@@ -6,35 +6,37 @@ const features = [
     href: '/xun',
     icon: '🌅',
     title: '寻句',
-    desc: '此刻想说什么？帮你找到最美的那句诗',
+    desc: '描述一个场景，或上传一张照片，帮你找到最贴切的那句话',
     ready: true,
+    emphasis: '主产品',
   },
   {
     href: '/gua',
     icon: '🔮',
     title: '问卦',
-    desc: '静心起卦，以古观今',
+    desc: '当你想不明白时，以周易智慧回应此刻的困惑',
     ready: true,
+    emphasis: '特色功能',
   },
   {
     href: '#',
     icon: '🖊️',
     title: '仿写',
-    desc: '用王阳明的笔，写你的心',
+    desc: '借古人的笔意，替你把心里的话写出来',
     ready: false,
   },
   {
     href: '#',
     icon: '📖',
     title: '秒读',
-    desc: '任何古文，一键读懂',
+    desc: '任何古文，一键白话，快速读懂其中意思',
     ready: false,
   },
   {
     href: '#',
     icon: '📚',
     title: '精读',
-    desc: '三分钟读透一段经典',
+    desc: '围绕一段经典，展开更深入的背景与意涵',
     ready: false,
   },
 ]
@@ -45,13 +47,22 @@ export default function Home() {
       <header className={`hero ${styles.homeHero}`}>
         <div className={styles.seal}>庄</div>
         <div className="hero-text">
-          <p className="subtitle">读懂 · 说出 · 写美</p>
+          <p className="subtitle">表达 · 照见 · 中文之美</p>
           <h1>小庄</h1>
           <p className="description">
-            天地有大美而不言。小庄帮你用最美的中文，说出心中所感。
+            当你说不清、想不明、写不出的时候，小庄帮你找到最贴切的那句话。
           </p>
         </div>
       </header>
+
+      <section className={styles.introPanel}>
+        <p className={styles.introLead}>
+          小庄不是古文工具箱，而是一个面向现代情绪与表达场景的中文灵感产品。
+        </p>
+        <p className={styles.introSub}>
+          当前主线是 <strong>寻句</strong>，特色副线是 <strong>问卦</strong>。其它能力会继续做，但不会抢走主产品的焦点。
+        </p>
+      </section>
 
       <section className={styles.grid}>
         {features.map((f) => (
@@ -64,6 +75,7 @@ export default function Home() {
             <div>
               <h2>
                 {f.title}
+                {f.emphasis && <span className={styles.emphasis}>{f.emphasis}</span>}
                 {!f.ready && <span className={styles.badge}>即将推出</span>}
               </h2>
               <p>{f.desc}</p>
