@@ -414,6 +414,7 @@ async function requestXun(
     onChunk?.(content)
   }
 
+  if (!content.trim()) throw new Error('模型返回空结果，请稍后再试')
   return content
 }
 

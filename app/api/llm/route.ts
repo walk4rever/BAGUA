@@ -92,6 +92,12 @@ export async function POST(request: Request) {
     messages: toModelMessages(rawMessages),
     temperature: temperature ?? 0.7,
     maxOutputTokens: max_tokens,
+    onError: ({ error }) => {
+      console.error('[llm] streamText error:', JSON.stringify(error))
+    },
+    onFinish: ({ text, finishReason, usage }) => {
+      console.log('[llm] finish:', finishReason, 'chars:', text.length, 'tokens:', usage)
+    },
   })
 
   return result.toTextStreamResponse()
