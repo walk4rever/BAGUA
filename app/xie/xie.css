@@ -1,0 +1,145 @@
+.xie-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 14%, rgba(255, 255, 255, 0.7), transparent 30%),
+    radial-gradient(circle at 74% 20%, rgba(139, 74, 60, 0.12), transparent 24%),
+    var(--paper-hero);
+}
+
+.xie-mist-layer,
+.xie-mountain-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.xie-mist-layer {
+  background:
+    radial-gradient(circle at 18% 32%, rgba(255, 255, 255, 0.6), transparent 26%),
+    radial-gradient(circle at 78% 26%, rgba(255, 255, 255, 0.34), transparent 22%),
+    radial-gradient(circle at 56% 66%, rgba(255, 255, 255, 0.2), transparent 28%);
+  opacity: 0.86;
+}
+
+.xie-mountain-layer {
+  background:
+    linear-gradient(to top, rgba(95, 124, 119, 0.14), rgba(95, 124, 119, 0) 32%),
+    radial-gradient(120% 58% at 8% 96%, rgba(126, 148, 140, 0.26) 0 32%, transparent 33%),
+    radial-gradient(90% 48% at 42% 100%, rgba(95, 124, 119, 0.18) 0 28%, transparent 29%),
+    radial-gradient(88% 44% at 80% 97%, rgba(111, 127, 111, 0.18) 0 28%, transparent 29%);
+  opacity: 0.92;
+}
+
+.xie-hero-text {
+  position: relative;
+  z-index: 1;
+}
+
+.xie-input-panel,
+.xie-result {
+  background: var(--paper-panel);
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-soft);
+}
+
+.xie-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--ink-1);
+  font-size: 0.92rem;
+}
+
+.xie-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 0.95rem;
+  border-radius: 16px;
+  border: 1px solid rgba(122, 104, 86, 0.22);
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink-0);
+  font-size: 1rem;
+  line-height: 1.76;
+  resize: vertical;
+  outline: none;
+  margin-bottom: 1rem;
+}
+
+.xie-textarea-compact {
+  min-height: 84px;
+}
+
+.xie-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.xie-control-title {
+  margin: 0 0 0.5rem;
+  color: var(--ink-1);
+  font-size: 0.88rem;
+}
+
+.xie-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.xie-chip {
+  border: 1px solid rgba(139, 74, 60, 0.22);
+  background: rgba(255, 255, 255, 0.82);
+  color: #6f554d;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+}
+
+.xie-chip.active {
+  background: rgba(139, 74, 60, 0.14);
+  border-color: rgba(139, 74, 60, 0.42);
+  color: #8b4a3c;
+}
+
+.xie-submit {
+  width: 100%;
+  padding: 0.92rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(139, 74, 60, 0.34);
+  background: linear-gradient(135deg, #8b4a3c, #9c7b5e);
+  color: #fbf8f1;
+  font-size: 1rem;
+  letter-spacing: 0.12rem;
+}
+
+.xie-submit:disabled {
+  opacity: 0.56;
+}
+
+.xie-main-text {
+  font-size: 1.2rem;
+  line-height: 2;
+  color: #2b2320;
+  white-space: pre-wrap;
+}
+
+.xie-self-check p {
+  color: var(--ink-2);
+  font-size: 0.88rem;
+}
+
+.xie-streaming {
+  color: var(--ink-1);
+}
+
+.xie-error {
+  color: #8b4a3c;
+}
+
+@media (max-width: 560px) {
+  .xie-controls {
+    grid-template-columns: 1fr;
+  }
+}

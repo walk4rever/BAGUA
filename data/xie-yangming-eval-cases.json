@@ -1,0 +1,92 @@
+[
+  {
+    "id": "xie-001",
+    "intent": "最近做事总拖延，知道该做却一直刷手机。",
+    "context": "准备转岗面试，时间只剩三周。",
+    "tone": "克己",
+    "length": "四句",
+    "mustIncludeIdeas": ["知行合一", "省察克治"],
+    "mustAvoid": ["空泛鸡汤", "网络热词"]
+  },
+  {
+    "id": "xie-002",
+    "intent": "团队意见很乱，我做负责人却迟迟下不了决心。",
+    "context": "产品上线前一周，需要拍板方案。",
+    "tone": "进取",
+    "length": "六句",
+    "mustIncludeIdeas": ["致良知", "事上磨炼"],
+    "mustAvoid": ["逃避决策", "模糊措辞"]
+  },
+  {
+    "id": "xie-003",
+    "intent": "被同事误解后很委屈，想解释又怕越描越黑。",
+    "context": "跨部门协作冲突。",
+    "tone": "定心",
+    "length": "四句",
+    "mustIncludeIdeas": ["反求诸己"],
+    "mustAvoid": ["自怜", "攻击他人"]
+  },
+  {
+    "id": "xie-004",
+    "intent": "创业半年没有收入，开始怀疑自己是不是走错路。",
+    "context": "独立开发产品，用户增长缓慢。",
+    "tone": "豁达",
+    "length": "六句",
+    "mustIncludeIdeas": ["事上磨炼", "致良知"],
+    "mustAvoid": ["盲目乐观", "摆烂"]
+  },
+  {
+    "id": "xie-005",
+    "intent": "我总想把每件事做到完美，结果迟迟不敢发布。",
+    "context": "准备发布第一门小课程。",
+    "tone": "克己",
+    "length": "四句",
+    "mustIncludeIdeas": ["知行合一"],
+    "mustAvoid": ["过度自责", "虚假豪言"]
+  },
+  {
+    "id": "xie-006",
+    "intent": "家里有老人住院，工作也在赶项目，心力快耗尽。",
+    "context": "连续两周高压。",
+    "tone": "定心",
+    "length": "六句",
+    "mustIncludeIdeas": ["致良知", "省察克治"],
+    "mustAvoid": ["只谈大道理", "忽视现实压力"]
+  },
+  {
+    "id": "xie-007",
+    "intent": "想和伴侣好好沟通，但每次开口都变成争吵。",
+    "context": "长期关系中的情绪摩擦。",
+    "tone": "定心",
+    "length": "四句",
+    "mustIncludeIdeas": ["反求诸己"],
+    "mustAvoid": ["说教语气", "责备对方"]
+  },
+  {
+    "id": "xie-008",
+    "intent": "我知道该锻炼和早睡，但总是三天打鱼两天晒网。",
+    "context": "长期健康习惯建设。",
+    "tone": "克己",
+    "length": "四句",
+    "mustIncludeIdeas": ["知行合一", "事上磨炼"],
+    "mustAvoid": ["口号式表达", "极端承诺"]
+  },
+  {
+    "id": "xie-009",
+    "intent": "升职后压力很大，怕自己扛不起这个位置。",
+    "context": "新任管理岗位第一个季度。",
+    "tone": "进取",
+    "length": "六句",
+    "mustIncludeIdeas": ["致良知", "事上磨炼"],
+    "mustAvoid": ["空洞鼓励", "过分悲观"]
+  },
+  {
+    "id": "xie-010",
+    "intent": "我想把过去的失败放下，但总在夜里反复内耗。",
+    "context": "复盘上一段创业经历。",
+    "tone": "豁达",
+    "length": "四句",
+    "mustIncludeIdeas": ["反求诸己", "致良知"],
+    "mustAvoid": ["鸡汤结尾", "情绪渲染过度"]
+  }
+]

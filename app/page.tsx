@@ -19,11 +19,12 @@ const features = [
     emphasis: '特色功能',
   },
   {
-    href: '#',
+    href: '/xie',
     icon: '写',
     title: '仿写',
     desc: '借古人的笔意，替你把心里的话写出来',
-    ready: false,
+    ready: true,
+    emphasis: '新功能',
   },
   {
     href: '#',
