@@ -51,15 +51,6 @@ export default function Home() {
         </div>
       </header>
 
-      <section className={styles.introPanel}>
-        <p className={styles.introLead}>
-          小庄不是古文工具箱，而是一个面向现代情绪与表达场景的中文灵感产品。
-        </p>
-        <p className={styles.introSub}>
-          当前主线是 <strong>寻句</strong>，特色副线是 <strong>问卦</strong>。其它能力会继续做，但不会抢走主产品的焦点。
-        </p>
-      </section>
-
       <section className={styles.grid}>
         {features.map((f) => (
           <Link
