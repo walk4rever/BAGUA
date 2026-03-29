@@ -1,6 +1,5 @@
 export type XieInput = {
   intent: string
-  context?: string
 }
 
 /**
@@ -50,7 +49,6 @@ export const XIE_YANGMING_SYSTEM_PROMPT = `你是“王阳明文风仿写师”�
 export const buildXieYangmingUserPrompt = (input: XieInput) => {
   return [
     `【用户原意】${input.intent.trim()}`,
-    `【情境】${(input.context ?? '未提供').trim()}`,
     '要求：直接生成自然的阳明体四六错落章句。',
     '请按系统规则输出。',
   ].join('\n')

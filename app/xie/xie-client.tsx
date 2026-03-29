@@ -11,12 +11,6 @@ type XieOutput = {
   text: string
   plain: string
   coreIdea: string
-  selfCheck?: {
-    structure?: string
-    rhythmPass?: boolean
-    philosophyPass?: boolean
-    readabilityPass?: boolean
-  }
 }
 
 const extractJsonBlock = (text: string) => {
@@ -43,12 +37,10 @@ const parseXieOutput = (raw: string): XieOutput | null => {
 
 const requestXie = async (
   intent: string,
-  context: string,
   onChunk?: (text: string) => void
 ) => {
   const userPrompt = buildXieYangmingUserPrompt({
     intent,
-    context,
   })
 
   const response = await fetch('/api/llm', {
@@ -89,7 +81,6 @@ const requestXie = async (
 
 export default function XieClient() {
   const [intent, setIntent] = useState('')
-  const [context, setContext] = useState('')
   const [rawOutput, setRawOutput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -103,7 +94,7 @@ export default function XieClient() {
     setRawOutput('')
 
     try {
-      const final = await requestXie(intent.trim(), context.trim(), (partial) => {
+      const final = await requestXie(intent.trim(), (partial) => {
         setRawOutput(partial)
       })
       setRawOutput(final)
@@ -140,15 +131,6 @@ export default function XieClient() {
           onChange={(event) => setIntent(event.target.value)}
         />
 
-        <label className="xie-label" htmlFor="context">情境（可选）</label>
-        <textarea
-          id="context"
-          className="xie-textarea xie-textarea-compact"
-          placeholder="例如：转岗面试前最后三周。"
-          value={context}
-          onChange={(event) => setContext(event.target.value)}
-        />
-
         <button className="xie-submit" onClick={handleSubmit} disabled={isLoading || !intent.trim()}>
           {isLoading ? '仿写中…' : '生成王阳明式章句'}
         </button>
@@ -174,24 +156,10 @@ export default function XieClient() {
           </div>
 
           <div className="section">
-            <h4>白话释义</h4>
+            <h4>义理释义</h4>
+            <p>【义理核心】{parsed.coreIdea}</p>
             <p>{parsed.plain}</p>
           </div>
-
-          <div className="section">
-            <h4>义理核心</h4>
-            <p>{parsed.coreIdea}</p>
-          </div>
-
-          {parsed.selfCheck ? (
-            <div className="section xie-self-check">
-              <h4>自检</h4>
-              <p>
-                结构：{parsed.selfCheck.structure ?? '未标注'} ｜ 节奏：{String(parsed.selfCheck.rhythmPass)} ｜
-                义理：{String(parsed.selfCheck.philosophyPass)} ｜ 可读：{String(parsed.selfCheck.readabilityPass)}
-              </p>
-            </div>
-          ) : null}
         </section>
       ) : null}
     </div>
