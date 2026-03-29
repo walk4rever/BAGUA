@@ -1,5 +1,5 @@
-export const runtime = 'edge'
-export const maxDuration = 30
+export const runtime = 'nodejs'
+export const maxDuration = 60
 
 const normalizeChatCompletionsUrl = (rawBaseUrl: string) => {
   const trimmed = rawBaseUrl.trim().replace(/\/+$/, '')
@@ -21,6 +21,14 @@ const isJsonResponse = (contentType: string | null) =>
   (contentType ?? '').toLowerCase().includes('application/json')
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const writeSseEvent = (
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  event: 'delta' | 'done' | 'error',
+  data: unknown
+) => {
+  controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`))
+}
 
 const extractErrorMessage = (value: unknown): string | null => {
   if (!value || typeof value !== 'object') return null
@@ -177,6 +185,180 @@ export async function POST(request: Request) {
     (upstreamPayload as { stream?: unknown }).stream !== false
 
   try {
+    if (shouldStream) {
+      const stream = new ReadableStream({
+        async start(controller) {
+          let response: Response | null = null
+
+          try {
+            for (let attempt = 1; attempt <= 2; attempt += 1) {
+              try {
+                response = await fetch(baseUrl, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${apiKey}`,
+                  },
+                  body: JSON.stringify(upstreamPayload),
+                })
+                break
+              } catch (error) {
+                const classified = classifyProxyError(error, true)
+                console.error('Proxy fetch failed', {
+                  attempt,
+                  status: classified.status,
+                  code: classified.code,
+                  retryable: classified.retryable,
+                  model: resolvedModel,
+                  stream: true,
+                  baseUrl,
+                  error,
+                })
+
+                if (!classified.retryable || attempt === 2) {
+                  writeSseEvent(controller, 'error', { error: classified.message, code: classified.code })
+                  writeSseEvent(controller, 'done', {})
+                  return
+                }
+
+                await sleep(UPSTREAM_RETRY_DELAY_MS)
+              }
+            }
+
+            if (!response) {
+              writeSseEvent(controller, 'error', {
+                error: '连接模型服务失败，请稍后再试。',
+                code: 'upstream_fetch_failed',
+              })
+              writeSseEvent(controller, 'done', {})
+              return
+            }
+
+            if (!response.ok) {
+              const contentType = response.headers.get('content-type')
+              const errorText = await response.text()
+              let errorMessage = errorText.trim()
+              let errorCode = 'upstream_http_error'
+
+              if (isJsonResponse(contentType)) {
+                try {
+                  const parsed = JSON.parse(errorText) as unknown
+                  errorMessage = extractErrorMessage(parsed) ?? errorMessage
+                  const extractedCode =
+                    parsed && typeof parsed === 'object' && 'code' in parsed &&
+                    typeof (parsed as { code?: unknown }).code === 'string'
+                      ? (parsed as { code: string }).code
+                      : null
+                  if (extractedCode) errorCode = extractedCode
+                } catch {
+                  // Fall back to raw text.
+                }
+              }
+
+              if (!errorMessage) {
+                if (response.status === 429 || response.status === 503) {
+                  errorMessage = '模型服务当前繁忙，请稍后再试。'
+                  errorCode = 'upstream_overloaded'
+                } else if (response.status === 504) {
+                  errorMessage = '模型服务响应超时，请稍后再试。'
+                  errorCode = 'upstream_timeout'
+                } else {
+                  errorMessage = '模型服务暂时不可用，请稍后再试。'
+                }
+              }
+
+              writeSseEvent(controller, 'error', { error: errorMessage, code: errorCode })
+              writeSseEvent(controller, 'done', {})
+              return
+            }
+
+            if (!response.body) {
+              writeSseEvent(controller, 'error', {
+                error: 'Upstream returned empty body',
+                code: 'upstream_empty_body',
+              })
+              writeSseEvent(controller, 'done', {})
+              return
+            }
+
+            const reader = response.body.getReader()
+            const decoder = new TextDecoder()
+            let sseBuffer = ''
+            let streamCompleted = false
+
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+
+              sseBuffer += decoder.decode(value, { stream: true })
+              const lines = sseBuffer.split('\n')
+              sseBuffer = lines.pop() ?? ''
+
+              for (const line of lines) {
+                const trimmed = line.trim()
+                if (!trimmed.startsWith('data:')) continue
+
+                const rawPayload = trimmed.slice(5).trim()
+                if (!rawPayload) continue
+                if (rawPayload === '[DONE]') {
+                  streamCompleted = true
+                  writeSseEvent(controller, 'done', {})
+                  await reader.cancel()
+                  break
+                }
+
+                try {
+                  const parsed = JSON.parse(rawPayload)
+                  const delta = extractContent(parsed)
+                  if (!delta) continue
+                  writeSseEvent(controller, 'delta', delta)
+                } catch {
+                  // Skip malformed upstream SSE chunks.
+                }
+              }
+
+              if (streamCompleted) break
+            }
+
+            const trailingPayload = sseBuffer.trim()
+            if (trailingPayload.startsWith('data:')) {
+              const rawPayload = trailingPayload.slice(5).trim()
+              if (rawPayload === '[DONE]') {
+                streamCompleted = true
+              } else if (rawPayload) {
+                try {
+                  const parsed = JSON.parse(rawPayload)
+                  const delta = extractContent(parsed)
+                  if (delta) writeSseEvent(controller, 'delta', delta)
+                } catch {
+                  // Ignore incomplete trailing chunk payloads.
+                }
+              }
+            }
+
+            if (!streamCompleted) {
+              writeSseEvent(controller, 'done', {})
+            }
+          } catch (error) {
+            console.error('Stream processing error:', error)
+            writeSseEvent(controller, 'error', { error: 'Stream interrupted' })
+            writeSseEvent(controller, 'done', {})
+          } finally {
+            controller.close()
+          }
+        },
+      })
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream; charset=utf-8',
+          'Cache-Control': 'no-cache, no-transform',
+          Connection: 'keep-alive',
+          'X-Accel-Buffering': 'no',
+        },
+      })
+    }
+
     let response: Response | null = null
 
     for (let attempt = 1; attempt <= 2; attempt += 1) {
@@ -188,22 +370,18 @@ export async function POST(request: Request) {
             Authorization: `Bearer ${apiKey}`,
           },
           body: JSON.stringify(upstreamPayload),
-          // Important: AbortSignal.timeout applies to the entire fetch lifecycle,
-          // including reading an active streaming response body. For SSE requests,
-          // that would abort a healthy stream mid-flight around 25s. Let Vercel's
-          // Edge maxDuration be the outer guardrail for streaming requests.
-          ...(shouldStream ? {} : { signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) }),
+          signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
         })
         break
       } catch (error) {
-        const classified = classifyProxyError(error, shouldStream)
+        const classified = classifyProxyError(error, false)
         console.error('Proxy fetch failed', {
           attempt,
           status: classified.status,
           code: classified.code,
           retryable: classified.retryable,
           model: resolvedModel,
-          stream: shouldStream,
+          stream: false,
           baseUrl,
           error,
         })
@@ -274,107 +452,12 @@ export async function POST(request: Request) {
       )
     }
 
-    if (!shouldStream || isJsonResponse(response.headers.get('content-type'))) {
-      return new Response(response.body, {
-        status: response.status,
-        headers: {
-          'Content-Type':
-            response.headers.get('content-type') ?? 'application/json; charset=utf-8',
-          'Cache-Control': 'no-cache, no-transform',
-        },
-      })
-    }
-
-    if (!response.body) {
-      return jsonResponse({ error: 'Upstream returned empty body' }, 502)
-    }
-
-    const stream = new ReadableStream({
-      async start(controller) {
-        const reader = response.body!.getReader()
-        const decoder = new TextDecoder()
-        let sseBuffer = ''
-        let streamCompleted = false
-
-        try {
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-
-            sseBuffer += decoder.decode(value, { stream: true })
-            const lines = sseBuffer.split('\n')
-            sseBuffer = lines.pop() ?? ''
-
-            for (const line of lines) {
-              const trimmed = line.trim()
-              if (!trimmed.startsWith('data:')) continue
-
-              const rawPayload = trimmed.slice(5).trim()
-              if (!rawPayload) continue
-              if (rawPayload === '[DONE]') {
-                streamCompleted = true
-                controller.enqueue(encoder.encode('event: done\ndata: {}\n\n'))
-                await reader.cancel()
-                break
-              }
-
-              try {
-                const parsed = JSON.parse(rawPayload)
-                const delta = extractContent(parsed)
-                if (!delta) continue
-                controller.enqueue(
-                  encoder.encode(`event: delta\ndata: ${JSON.stringify(delta)}\n\n`)
-                )
-              } catch {
-                // Skip malformed upstream SSE chunks.
-              }
-            }
-
-            if (streamCompleted) break
-          }
-
-          const trailingPayload = sseBuffer.trim()
-          if (trailingPayload.startsWith('data:')) {
-            const rawPayload = trailingPayload.slice(5).trim()
-            if (rawPayload === '[DONE]') {
-              streamCompleted = true
-            } else if (rawPayload) {
-              try {
-                const parsed = JSON.parse(rawPayload)
-                const delta = extractContent(parsed)
-                if (delta) {
-                  controller.enqueue(
-                    encoder.encode(`event: delta\ndata: ${JSON.stringify(delta)}\n\n`)
-                  )
-                }
-              } catch {
-                // Ignore incomplete trailing chunk payloads.
-              }
-            }
-          }
-
-          if (!streamCompleted) {
-            controller.enqueue(encoder.encode('event: done\ndata: {}\n\n'))
-          }
-        } catch (error) {
-          console.error('Stream processing error:', error)
-          controller.enqueue(
-            encoder.encode(
-              `event: error\ndata: ${JSON.stringify({ error: 'Stream interrupted' })}\n\n`
-            )
-          )
-        } finally {
-          controller.close()
-        }
-      },
-    })
-
-    return new Response(stream, {
+    return new Response(response.body, {
+      status: response.status,
       headers: {
-        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Content-Type':
+          response.headers.get('content-type') ?? 'application/json; charset=utf-8',
         'Cache-Control': 'no-cache, no-transform',
-        Connection: 'keep-alive',
-        'X-Accel-Buffering': 'no',
       },
     })
   } catch (error) {
