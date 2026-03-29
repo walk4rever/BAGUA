@@ -151,6 +151,25 @@ const deriveHexagram = (lines: Line[]) => {
 }
 
 const INTERPRETATION_TEMPERATURE = 0.75
+
+const getHexagramName = (entry: HexagramEntry | null) => {
+  if (!entry) return ''
+
+  const fromGuaCi = entry.guaCi.match(/^([^，。；：\s]+)/)?.[1]?.trim()
+  if (fromGuaCi) {
+    return fromGuaCi.endsWith('卦') ? fromGuaCi : `${fromGuaCi}卦`
+  }
+
+  const fromTitle = entry.title
+    .replace(/^《易经》\s*第[一二三四五六七八九十百千零〇0-9]+卦\s*/u, '')
+    .trim()
+    .split(/\s+/)[0]
+    ?.trim()
+
+  if (!fromTitle) return ''
+  return fromTitle.endsWith('卦') ? fromTitle : `${fromTitle}卦`
+}
+
 const SHARE_ICON_PATH =
   'M15 8a3 3 0 1 0-2.83-4H12a3 3 0 0 0 .17 1l-5.1 2.9a3 3 0 0 0-4.24 2.8 3 3 0 0 0 .06.6l5.05 2.87A3 3 0 0 0 8 15a3 3 0 1 0 .17-1l-5.1-2.9a3 3 0 0 0 0-1.2l5.1-2.9A3 3 0 1 0 15 8Z'
 const SHARE_CARD_WIDTH = 1080
@@ -186,8 +205,8 @@ const buildInterpretationPrompt = (
     ? changingYaos.join('\n')
     : '无动爻（静卦，以本卦卦辞为主）'
 
-  const baseTitle = entry?.title ?? '本卦'
-  const changedTitle = changedEntry?.title ?? '变卦'
+  const baseTitle = getHexagramName(entry) || '本卦'
+  const changedTitle = getHexagramName(changedEntry) || '变卦'
   const baseYaoText = entry?.yaoCi?.length
     ? entry.yaoCi.map((text, index) => {
         const label =
@@ -518,16 +537,19 @@ const generateGuaShareCard = async (result: HexagramResult, interpretation: Pars
   ctx.fillText('小庄 · 问卦分享', padding, y)
   y += 56
 
+  const baseName = getHexagramName(result.entry) || '本卦'
+  const changedName = getHexagramName(result.changedEntry)
+
   ctx.fillStyle = '#1f1a16'
   ctx.font = '700 54px "Noto Serif SC", serif'
-  ctx.fillText(result.entry?.title ?? `第${result.number}卦`, padding, y)
+  ctx.fillText(baseName, padding, y)
   y += 76
 
   ctx.fillStyle = '#6b5f54'
   ctx.font = '400 28px "Noto Serif SC", serif'
-  ctx.fillText(`本卦：第${result.number}卦`, padding, y)
-  if (result.changedEntry && result.changedNumber !== result.number) {
-    ctx.fillText(`变卦：第${result.changedNumber}卦 ${result.changedEntry.title}`, padding + 340, y)
+  ctx.fillText(`本卦：${baseName}`, padding, y)
+  if (changedName && result.changedNumber !== result.number) {
+    ctx.fillText(`变卦：${changedName}`, padding + 340, y)
   }
   y += 56
 
@@ -685,7 +707,7 @@ function HexagramCard({ heading, entry, lines }: HexagramCardProps) {
 
       <div className="result-body">
         <div className="text-block">
-          <h3>{entry?.title}</h3>
+          <h3>{getHexagramName(entry) || entry?.title}</h3>
           <div className="quote">{entry?.guaCi}</div>
 
 
