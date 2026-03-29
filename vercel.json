@@ -1,15 +1,3 @@
 {
-  "version": 2,
-  "functions": {
-    "api/llm.ts": {
-      "maxDuration": 30
-    }
-  },
-  "regions": ["hkg1"],
-  "rewrites": [
-    {
-      "source": "/api/llm",
-      "destination": "/api/llm"
-    }
-  ]
+  "framework": "nextjs"
 }

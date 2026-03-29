@@ -1,21 +1,23 @@
-# 来，八卦一下！ 
+# 小庄 — 你的中文表达伙伴
 
-中国传统阴阳八卦风格的起卦应用，模拟铜钱起卦生成本卦与变卦，并展示《周易》卦辞与行动指引。适配移动端，支持直接部署到根路径。让我们一起八卦一下！
+让每个现代人都能轻松地读懂、说出、写出漂亮的中文。
+
+> 天地有大美而不言 —— 庄子
 
 ## 功能
 
-- 三次掷钱生成六爻，展示本卦与变爻
-- 自动给出卦象解读与行动建议
-- 阴阳旋转动效后展示结果
-- 移动端优先布局与精简视觉
+- 🌅 **寻句** — 描述场景或心情，从千年诗文中找到最贴切的那句话
+- 🔮 **问卦** — 以周易智慧回应人生困惑，AI 解读卦象
+- 🖊️ **仿写** — 用王阳明/苏东坡的文风，写你的心（即将推出）
+- 📖 **秒读** — 任何古文，逐字注音、一键白话（即将推出）
+- 📚 **精读** — 三分钟读透一段经典（即将推出）
 
-## 在线访问
+## 技术栈
 
-https://bugua.air7.fun
-
-## 开源与商业化
-
-本项目当前为开源体验版，未来计划提供更丰富的商业化能力与服务支持。
+- Next.js 16 (App Router)
+- React 19
+- Vercel Edge Runtime
+- DeepSeek v3.2 (AI)
 
 ## 本地开发
 
@@ -24,32 +26,24 @@ npm install
 npm run dev
 ```
 
-环境变量：
+环境变量（`.env.local`）：
 
 ```bash
 AI_API_KEY=your-api-key
 AI_API_BASE_URL=https://your-provider.example.com/v1
 AI_MODEL=your-model-name
+NEXT_PUBLIC_AI_MODEL=your-model-name
 ```
 
-## 构建与校验
+## 构建与部署
 
 ```bash
 npm run build
-npm run lint
-npm run preview
+npm run start
 ```
 
-## 部署说明
-
-项目默认基于根路径构建（见 `vite.config.ts`），Nginx 配置见 `nginx.conf`，容器镜像由 `Dockerfile` 构建。
+部署到 Vercel：
 
 ```bash
-docker build -t bagua .
-docker run --rm -p 8080:80 bagua
+vercel
 ```
-
-访问：
-
-- `http://localhost:8080/`
-- 健康检查：`/health`

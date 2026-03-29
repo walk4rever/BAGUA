@@ -1,6 +1,8 @@
+'use client'
+
 import { useMemo, useRef, useState } from 'react'
-import zhouyi from './data/zhouyi.json'
-import './App.css'
+import zhouyi from '@/data/zhouyi.json'
+import Link from 'next/link'
 
 type HexagramEntry = {
   id: number
@@ -384,10 +386,8 @@ const requestInterpretation = async (
   onChunk?: (text: string) => void
 ) => {
   const prompt = buildInterpretationPrompt(lines, entry, changedEntry)
-  const model = import.meta.env.VITE_AI_MODEL ?? 'default-model'
-  const apiUrl = import.meta.env.DEV
-    ? '/api/llm'
-    : `${import.meta.env.BASE_URL}api/llm`
+  const model = process.env.NEXT_PUBLIC_AI_MODEL ?? 'default-model'
+  const apiUrl = '/api/llm'
   const basePayload = {
     model,
     messages: [
@@ -589,7 +589,7 @@ function HexagramCard({ heading, entry, lines }: HexagramCardProps) {
   )
 }
 
-function App() {
+export default function GuaClient() {
   const [result, setResult] = useState<HexagramResult | null>(null)
   const [isCasting, setIsCasting] = useState(false)
   const [isRetrying, setIsRetrying] = useState(false)
@@ -730,8 +730,9 @@ function App() {
       <header className="hero">
         <div className="seal">卦</div>
         <div className="hero-text">
+          <Link href="/" className="back-link">← 小庄</Link>
           <p className="subtitle">静心 · 观变 · 明行</p>
-          <h1>八卦起心</h1>
+          <h1>问卦</h1>
           <p className="description">
             以阴阳为镜，照见内心之事。起卦前请平静情绪，想清楚所求，默念三遍即可。
           </p>
@@ -816,4 +817,4 @@ function App() {
   )
 }
 
-export default App
+

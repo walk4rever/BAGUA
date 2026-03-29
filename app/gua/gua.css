@@ -1,22 +1,6 @@
-.app {
-  display: flex;
-  flex-direction: column;
-  gap: 2.5rem;
-  padding: 2.5rem clamp(1.5rem, 4vw, 4rem) 4rem;
-  color: #f6ead6;
-}
-
 .hero {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: clamp(1.5rem, 3vw, 3.5rem);
-  padding: clamp(1.5rem, 3vw, 2.5rem);
-  border-radius: 28px;
   background: radial-gradient(circle at top, rgba(164, 43, 22, 0.25), transparent 55%),
     linear-gradient(135deg, rgba(28, 22, 18, 0.95), rgba(18, 15, 12, 0.98));
-  box-shadow: 0 30px 60px rgba(10, 7, 5, 0.45);
-  border: 1px solid rgba(200, 167, 113, 0.2);
 }
 
 .seal {
@@ -30,54 +14,6 @@
   font-size: 2.8rem;
   color: #f8e6c0;
   box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.35);
-}
-
-.hero-text h1 {
-  margin: 0.35rem 0 0.6rem;
-  font-size: clamp(2.5rem, 4vw, 3.5rem);
-  letter-spacing: 0.2rem;
-}
-
-.subtitle {
-  font-family: 'Ma Shan Zheng', cursive;
-  font-size: 1.1rem;
-  color: rgba(248, 226, 186, 0.75);
-  margin: 0;
-}
-
-.description {
-  margin: 0;
-  max-width: 46rem;
-  color: rgba(248, 233, 209, 0.8);
-  line-height: 1.7;
-}
-
-.description,
-.quote,
-.section li,
-.guidance-panel p {
-  word-break: break-word;
-  hyphens: auto;
-}
-
-.layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(1rem, 3vw, 2rem);
-}
-
-.panel {
-  padding: clamp(1.5rem, 3vw, 2.5rem);
-  border-radius: 24px;
-  background: rgba(17, 14, 12, 0.88);
-  border: 1px solid rgba(194, 163, 110, 0.22);
-  box-shadow: 0 20px 40px rgba(6, 5, 4, 0.35);
-}
-
-.panel h2 {
-  margin-top: 0;
-  font-size: 1.6rem;
-  letter-spacing: 0.12rem;
 }
 
 .panel-tip {
@@ -149,31 +85,11 @@
   min-width: 0;
 }
 
-.badge {
-  padding: 0.35rem 0.9rem;
-  border-radius: 999px;
-  border: 1px solid rgba(220, 180, 110, 0.4);
-  color: #f7e5c1;
-  font-size: 0.85rem;
-  letter-spacing: 0.2rem;
-}
-
-.badge.subtle {
-  color: rgba(248, 233, 209, 0.55);
-}
-
 .result-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0.8rem;
   margin-top: 0.4rem;
-}
-
-.hexagram-pair {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  align-items: start;
 }
 
 .hexagram {
@@ -193,82 +109,6 @@
   display: block;
 }
 
-.lines {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.line {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
-  height: 12px;
-}
-
-.line span {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: #6aa6ff;
-}
-
-.line.yang span:last-child {
-  grid-column: 1 / -1;
-}
-
-.line.yang span:first-child {
-  display: none;
-}
-
-.line .full {
-  grid-column: 1 / -1;
-}
-
-.line .muted {
-  background: rgba(106, 166, 255, 0.2);
-}
-
-.line.yin span:first-child,
-.line.yin span:last-child {
-  background: #8bb8ff;
-}
-
-.line.yin span:nth-child(1) {
-  margin-right: 0.3rem;
-}
-
-.line.yin span:nth-child(2) {
-  margin-left: 0.3rem;
-}
-
-.line.changing span {
-  background: #ff6b6b;
-  box-shadow: 0 0 12px rgba(255, 107, 107, 0.75);
-}
-
-.line.empty span {
-  background: rgba(106, 166, 255, 0.2);
-}
-
-.line-caption {
-  font-size: 0.85rem;
-  color: rgba(248, 233, 209, 0.65);
-  margin-top: 0;
-}
-
-.changing-lines {
-  font-size: 0.85rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem 0.8rem;
-  color: rgba(248, 233, 209, 0.8);
-}
-
-.changing-lines.subtle {
-  color: rgba(248, 233, 209, 0.5);
-}
-
 .text-block h3 {
   margin-top: 0;
   font-size: 1.5rem;
@@ -281,16 +121,6 @@
   border-radius: 16px;
   margin-bottom: 1.4rem;
   line-height: 1.7;
-}
-
-.section {
-  margin-bottom: 1.5rem;
-}
-
-.section h4 {
-  margin: 0 0 0.6rem;
-  font-size: 1.1rem;
-  color: rgba(248, 233, 209, 0.88);
 }
 
 .section ul {
@@ -309,7 +139,6 @@
   line-height: 1.6;
 }
 
-/* 动爻高亮 */
 .changing-yao {
   background: rgba(255, 107, 107, 0.08);
   border-color: rgba(255, 107, 107, 0.35);
@@ -328,26 +157,6 @@
   letter-spacing: 0.05rem;
   vertical-align: middle;
   line-height: 1.6;
-}
-
-.empty-state {
-  color: rgba(248, 233, 209, 0.7);
-  line-height: 1.7;
-}
-
-.guidance-panel ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 0.6rem;
-}
-
-.guidance-panel li {
-  padding: 0.8rem 1rem;
-  border-radius: 14px;
-  background: rgba(28, 20, 16, 0.75);
-  border: 1px solid rgba(212, 175, 120, 0.2);
 }
 
 .guidance-panel p {
@@ -409,11 +218,6 @@
 }
 
 @media (max-width: 960px) {
-  .hero {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
   .result-body {
     grid-template-columns: 1fr;
     gap: 0.8rem;
@@ -422,50 +226,9 @@
   .hexagram {
     align-self: center;
   }
-
-  .hexagram-pair {
-    grid-template-columns: 1fr;
-  }
-
-  .lines {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
 }
 
-/* Mobile-first tweaks */
 @media (max-width: 480px) {
-  .app {
-    padding: 1rem 0.9rem 1.6rem;
-    gap: 1rem;
-  }
-
-  .layout {
-    gap: 0.85rem;
-  }
-
-  .hero {
-    padding: 0.9rem;
-  }
-
-  .hero-text h1 {
-    font-size: 2rem;
-    letter-spacing: 0.08rem;
-  }
-
-  .subtitle {
-    font-size: 1rem;
-  }
-
-  .panel {
-    padding: 0.85rem;
-  }
-
-  .panel h2 {
-    font-size: 1.2rem;
-    letter-spacing: 0.06rem;
-  }
-
   .header-left {
     gap: 0.75rem;
   }
@@ -483,24 +246,12 @@
     line-height: 1.7;
   }
 
-  .section {
-    margin-bottom: 0.9rem;
-  }
-
   .section ul {
     gap: 0.25rem;
   }
 
   .section li {
     padding: 0.45rem 0.6rem;
-  }
-
-  .guidance-panel ul {
-    gap: 0.35rem;
-  }
-
-  .guidance-panel li {
-    padding: 0.5rem 0.65rem;
   }
 
   .result-body {
@@ -513,14 +264,6 @@
 
   .header-hexagram .hexagram-image {
     width: 110px;
-  }
-
-  .lines {
-    gap: 0.3rem;
-  }
-
-  .line {
-    height: 10px;
   }
 
   .cast-info {
