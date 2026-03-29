@@ -3,7 +3,7 @@ import XieClient from './xie-client'
 
 export const metadata: Metadata = {
   title: '仿写 — 小庄',
-  description: '以王阳明文风为骨，写出文哲具佳的四六章句。',
+  description: '在老庄、骈文、唐宋古文与阳明文哲之间随机取法，写出文哲具佳短章。',
 }
 
 export default function XiePage() {

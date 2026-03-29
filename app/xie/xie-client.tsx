@@ -8,6 +8,7 @@ import {
 } from '@/data/xie-yangming'
 
 type XieOutput = {
+  styleUsed: string
   text: string
   plain: string
   coreIdea: string
@@ -28,7 +29,7 @@ const parseXieOutput = (raw: string): XieOutput | null => {
   if (!candidate) return null
   try {
     const parsed = JSON.parse(candidate) as XieOutput
-    if (!parsed.text || !parsed.plain || !parsed.coreIdea) return null
+    if (!parsed.styleUsed || !parsed.text || !parsed.plain || !parsed.coreIdea) return null
     return parsed
   } catch {
     return null
@@ -116,7 +117,7 @@ export default function XieClient() {
           <p className="subtitle">立诚 · 明心 · 见行</p>
           <h1>仿写</h1>
           <p className="description">
-            以王阳明文风为骨，生成四字六字错落有致的自然章句。把现代心事写成文哲具佳的短章。
+            在老子、庄子、六朝骈文、唐宋八大家、王阳明之间随机取法，写成文哲具佳的古典短章。
           </p>
         </div>
       </header>
@@ -132,7 +133,7 @@ export default function XieClient() {
         />
 
         <button className="xie-submit" onClick={handleSubmit} disabled={isLoading || !intent.trim()}>
-          {isLoading ? '仿写中…' : '生成王阳明式章句'}
+          {isLoading ? '仿写中…' : '随机生成古典风格章句'}
         </button>
       </section>
 
@@ -150,6 +151,11 @@ export default function XieClient() {
 
       {parsed ? (
         <section className="panel xie-result">
+          <div className="section">
+            <h4>模仿风格</h4>
+            <p>{parsed.styleUsed}</p>
+          </div>
+
           <div className="section">
             <h4>章句</h4>
             <p className="xie-main-text">{parsed.text}</p>
