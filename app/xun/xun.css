@@ -145,7 +145,7 @@
 
 .xun-image-preview-wrap {
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 0;
   border: 1px solid var(--line-soft);
   background: rgba(255, 255, 255, 0.82);
   margin-bottom: 0.9rem;
@@ -165,7 +165,7 @@
   display: block;
   max-height: 420px;
   object-fit: contain;
-  border-radius: 14px;
+  border-radius: 0;
   background: rgba(255, 255, 255, 0.9);
 }
 
@@ -390,7 +390,7 @@
 }
 
 .xun-share-sheet-preview {
-  border-radius: 18px;
+  border-radius: 0;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.84);
   border: 1px solid var(--line-soft);
