@@ -215,7 +215,6 @@ export default function DuDayClient({ run, date }: Props) {
 
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null)
-  const [shareBlob, setShareBlob] = useState<Blob | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
   const openShare = async () => {
@@ -226,9 +225,7 @@ export default function DuDayClient({ run, date }: Props) {
     setIsGenerating(true)
     try {
       const blob = await generateDuShareCard(run, date)
-      const url = URL.createObjectURL(blob)
-      setShareBlob(blob)
-      setShareImageUrl(url)
+      setShareImageUrl(URL.createObjectURL(blob))
     } catch (err) {
       console.error(err)
     } finally {
@@ -237,14 +234,6 @@ export default function DuDayClient({ run, date }: Props) {
   }
 
   const closeShare = () => setIsShareOpen(false)
-
-  const handleSave = () => {
-    if (!shareBlob) return
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(shareBlob)
-    a.download = `小庄慢读-${date}.jpg`
-    a.click()
-  }
 
   // ESC to close + body scroll lock
   useEffect(() => {
@@ -355,7 +344,7 @@ export default function DuDayClient({ run, date }: Props) {
         <div className="du-share-sheet" onClick={closeShare}>
           <div className="du-share-sheet-card" onClick={(e) => e.stopPropagation()}>
             <div className="du-share-sheet-header">
-              <h3 className="du-share-sheet-title">保存图片后分享到朋友圈</h3>
+              <h3 className="du-share-sheet-title">长按图片保存，分享到朋友圈</h3>
               <button className="du-share-close" onClick={closeShare} aria-label="关闭">×</button>
             </div>
 
@@ -372,11 +361,6 @@ export default function DuDayClient({ run, date }: Props) {
               )}
             </div>
 
-            {shareImageUrl && (
-              <button className="du-share-save-btn" onClick={handleSave}>
-                保存图片
-              </button>
-            )}
           </div>
         </div>
       )}
