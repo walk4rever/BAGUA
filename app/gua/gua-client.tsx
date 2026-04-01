@@ -622,7 +622,7 @@ const generateGuaShareCard = async (result: HexagramResult, interpretation: Pars
   ctx.stroke()
 
   const footerTopY = footerY + 34
-  await drawShareFooter(ctx, w, footerTopY, '问卦')
+  await drawShareFooter(ctx, w, footerTopY, '问心')
 
   y = footerTopY + SHARE_QR_SIZE + 34
 
@@ -906,11 +906,11 @@ export default function GuaClient() {
       <header className="hero gua-hero">
         <div className="gua-mist-layer" aria-hidden="true" />
         <div className="gua-mountain-layer" aria-hidden="true" />
-        <div className="seal">卦</div>
+        <div className="seal">心</div>
         <div className="hero-text gua-hero-text">
           <Link href="/" className="back-link">← 小庄</Link>
           <p className="subtitle">静心 · 观变 · 明行</p>
-          <h1>问卦</h1>
+          <h1>问心</h1>
           <p className="description">
             以阴阳为镜，照见内心之事。起卦前请平静情绪，想清楚所求，默念三遍即可。
           </p>

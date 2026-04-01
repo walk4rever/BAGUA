@@ -322,7 +322,7 @@ const generateShareCard = async (
     y += interpretLineH
   }
 
-  await drawShareFooter(ctx, w, h - margin - SHARE_QR_SIZE, '寻句')
+  await drawShareFooter(ctx, w, h - margin - SHARE_QR_SIZE, '寻章')
 
   ctx.textBaseline = 'alphabetic'
 
@@ -337,7 +337,7 @@ async function requestXun(
   const userText = input.trim()
   const imageInstruction = image
     ? userText
-      ? `请先看这张照片，再结合我的补充感受来寻句：${userText}`
+      ? `请先看这张照片，再结合我的补充感受来寻章：${userText}`
       : '请先认真看这张照片的场景、氛围与情绪，再为它寻一句最贴切的古典诗文。'
     : userText
 
@@ -474,7 +474,7 @@ export default function XunClient() {
       })
     } catch (err) {
       if (reqId === requestIdRef.current) {
-        setError(err instanceof Error ? err.message : '寻句失败，请稍后再试')
+        setError(err instanceof Error ? err.message : '寻章失败，请稍后再试')
       }
     } finally {
       if (reqId === requestIdRef.current) setIsLoading(false)
@@ -515,11 +515,11 @@ export default function XunClient() {
       <header className="hero xun-hero">
         <div className="xun-mist-layer" aria-hidden="true" />
         <div className="xun-mountain-layer" aria-hidden="true" />
-        <div className="seal">句</div>
+        <div className="seal">章</div>
         <div className="hero-text">
           <Link href="/" className="back-link">← 小庄</Link>
           <p className="subtitle">观景 · 体情 · 寻意</p>
-          <h1>寻句</h1>
+          <h1>寻章</h1>
           <p className="description">
             描述你看到的、感受到的，或直接上传一张照片，小庄从千年诗文中，帮你找到最贴切的那句话。
           </p>
@@ -549,7 +549,7 @@ export default function XunClient() {
         {image ? (
           <div className="xun-image-preview-wrap">
             <div className="xun-image-preview-stage">
-              <img src={image.dataUrl} alt="待寻句照片" className="xun-image-preview" />
+              <img src={image.dataUrl} alt="待寻章照片" className="xun-image-preview" />
             </div>
             <div className="xun-image-meta">
               <span>
@@ -587,8 +587,8 @@ export default function XunClient() {
             ? '图片处理中…'
             : isLoading
               ? image
-                ? '正在看图，为你寻句…'
-                : '寻句中…'
+                ? '正在看图，为你寻章…'
+                : '寻章中…'
               : image
                 ? '为这张照片找一句'
                 : '帮我找那句话'}
@@ -603,14 +603,14 @@ export default function XunClient() {
 
       {isStreaming && !parsed && (
         <section className="panel xun-result">
-          <p className="xun-streaming">{image ? '先看图，再为你落一句贴切的话……' : '寻句中，古人正在翻书……'}</p>
+          <p className="xun-streaming">{image ? '先看图，再为你落一句贴切的话……' : '寻章中，古人正在翻书……'}</p>
         </section>
       )}
 
       {parsed && (
         <section className="panel xun-result">
           <div className="xun-result-toolbar">
-            <span className="xun-result-tag">{image ? '看图寻句' : '文字寻句'}</span>
+            <span className="xun-result-tag">{image ? '看图寻章' : '文字寻章'}</span>
           </div>
           <div className="xun-quote-block">
             <p className="quote-text">{parsed.quote}</p>
