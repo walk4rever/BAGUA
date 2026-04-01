@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
   buildXieYangmingUserPrompt,
@@ -14,6 +14,14 @@ type XieOutput = {
   authorUsed: string
   text: string
 }
+
+const SHARE_CARD_WIDTH = 1080
+const SHARE_CARD_HEIGHT = 1440
+const SHARE_DEST_URL = 'https://xz.air7.fun'
+const SHARE_QR_PATH = '/qr-xz-air7-fun.svg'
+
+const SHARE_ICON_PATH =
+  'M15 8a3 3 0 1 0-2.83-4H12a3 3 0 0 0 .17 1l-5.1 2.9a3 3 0 0 0-4.24 2.8 3 3 0 0 0 .06.6l5.05 2.87A3 3 0 0 0 8 15a3 3 0 1 0 .17-1l-5.1-2.9a3 3 0 0 0 0-1.2l5.1-2.9A3 3 0 1 0 15 8Z'
 
 const extractJsonBlock = (text: string) => {
   const trimmed = text.trim()
@@ -35,6 +43,179 @@ const parseXieOutput = (raw: string): XieOutput | null => {
   } catch {
     return null
   }
+}
+
+const loadImage = (src: string) =>
+  new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error('图片加载失败'))
+    img.src = src
+  })
+
+const canvasToBlob = (canvas: HTMLCanvasElement, quality: number) =>
+  new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob)
+        else reject(new Error('图片生成失败，请重试。'))
+      },
+      'image/jpeg',
+      quality
+    )
+  })
+
+const wrapText = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  maxLines: number
+) => {
+  const chars = Array.from(text)
+  const lines: string[] = []
+  let current = ''
+
+  for (const char of chars) {
+    const next = current + char
+    if (ctx.measureText(next).width <= maxWidth) {
+      current = next
+      continue
+    }
+    if (current) lines.push(current)
+    current = char
+    if (lines.length >= maxLines) break
+  }
+
+  if (lines.length < maxLines && current) lines.push(current)
+
+  if (lines.length > maxLines) return lines.slice(0, maxLines)
+
+  if (lines.length === maxLines && chars.join('') !== lines.join('')) {
+    const last = lines[maxLines - 1] ?? ''
+    lines[maxLines - 1] = last.slice(0, Math.max(0, last.length - 1)) + '…'
+  }
+
+  return lines
+}
+
+const generateXieShareCard = async (
+  text: string,
+  styleUsed: string,
+  authorUsed: string,
+  styleBio: string,
+  authorBio: string
+) => {
+  const canvas = document.createElement('canvas')
+  canvas.width = SHARE_CARD_WIDTH
+  canvas.height = SHARE_CARD_HEIGHT
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('分享图生成失败，请重试。')
+
+  const w = canvas.width
+  const h = canvas.height
+  const margin = 80
+
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, 0, h)
+  bg.addColorStop(0, '#f9f4ec')
+  bg.addColorStop(0.6, '#f2ebe0')
+  bg.addColorStop(1, '#ece3d4')
+  ctx.fillStyle = bg
+  ctx.fillRect(0, 0, w, h)
+
+  // Subtle warm glow
+  const glow = ctx.createRadialGradient(w * 0.2, h * 0.28, 20, w * 0.2, h * 0.28, 520)
+  glow.addColorStop(0, 'rgba(255,255,255,0.4)')
+  glow.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.fillStyle = glow
+  ctx.fillRect(0, 0, w, h)
+
+  ctx.textBaseline = 'top'
+
+  const quoteFontSize = 52
+  const quoteLineH = quoteFontSize + 24
+  const sourceFontSize = 26
+  const bioFontSize = 25
+  const bioLineH = bioFontSize + 18
+
+  ctx.font = `700 ${quoteFontSize}px "Noto Serif SC", serif`
+  const quoteLines = wrapText(ctx, text, w - margin * 2, 6)
+
+  ctx.font = `400 ${bioFontSize}px "Noto Serif SC", serif`
+  const styleBioLines = wrapText(ctx, styleBio, w - margin * 2, 2)
+  const authorBioLines = wrapText(ctx, authorBio, w - margin * 2, 2)
+
+  // Vertically centre block in top 65% of card
+  const blockH =
+    quoteLines.length * quoteLineH +
+    32 + sourceFontSize +
+    80 +
+    styleBioLines.length * bioLineH +
+    16 +
+    authorBioLines.length * bioLineH
+
+  let y = Math.max(140, (h * 0.65 - blockH) / 2)
+
+  // 章句
+  ctx.fillStyle = '#1c1714'
+  ctx.font = `700 ${quoteFontSize}px "Noto Serif SC", serif`
+  for (const line of quoteLines) {
+    ctx.fillText(line, margin, y)
+    y += quoteLineH
+  }
+
+  y += 32
+
+  // Attribution
+  ctx.fillStyle = '#96836e'
+  ctx.font = `400 ${sourceFontSize}px "Noto Serif SC", serif`
+  ctx.fillText(`—— 仿${styleUsed}·${authorUsed}体`, margin, y)
+  y += sourceFontSize + 56
+
+  // Divider
+  ctx.strokeStyle = 'rgba(148, 122, 88, 0.28)'
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+  ctx.moveTo(margin, y)
+  ctx.lineTo(margin + 160, y)
+  ctx.stroke()
+  y += 48
+
+  // Style bio
+  ctx.fillStyle = '#7a6e64'
+  ctx.font = `400 ${bioFontSize}px "Noto Serif SC", serif`
+  for (const line of styleBioLines) {
+    ctx.fillText(line, margin, y)
+    y += bioLineH
+  }
+
+  y += 16
+
+  // Author bio
+  for (const line of authorBioLines) {
+    ctx.fillText(line, margin, y)
+    y += bioLineH
+  }
+
+  // QR
+  try {
+    const qrSize = 96
+    const qrImage = await loadImage(SHARE_QR_PATH)
+    ctx.globalAlpha = 0.45
+    ctx.drawImage(qrImage, w - margin - qrSize, h - margin - qrSize, qrSize, qrSize)
+    ctx.globalAlpha = 1
+  } catch {
+    ctx.fillStyle = '#a0907e'
+    ctx.font = '400 18px "Noto Serif SC", serif'
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'bottom'
+    ctx.fillText(SHARE_DEST_URL, w - margin, h - margin)
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+  }
+
+  ctx.textBaseline = 'alphabetic'
+  return canvasToBlob(canvas, 0.92)
 }
 
 const requestXie = async (
@@ -87,16 +268,49 @@ export default function XieClient() {
   const [pickedStyle, setPickedStyle] = useState('')
   const [pickedAuthor, setPickedAuthor] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isGeneratingShare, setIsGeneratingShare] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [shareBlob, setShareBlob] = useState<Blob | null>(null)
+  const [shareImageUrl, setShareImageUrl] = useState<string | null>(null)
+  const [isShareOpen, setIsShareOpen] = useState(false)
 
   const parsed = rawOutput ? parseXieOutput(rawOutput) : null
-  const knowledge = pickedStyle && pickedAuthor ? getKnowledgeBit(pickedStyle, pickedAuthor) : null
+  const knowledge =
+    pickedStyle && pickedAuthor ? getKnowledgeBit(pickedStyle, pickedAuthor) : null
+
+  useEffect(() => {
+    return () => {
+      if (shareImageUrl) URL.revokeObjectURL(shareImageUrl)
+    }
+  }, [shareImageUrl])
+
+  useEffect(() => {
+    if (!isShareOpen) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsShareOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prev
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [isShareOpen])
+
+  const resetShareCard = () => {
+    if (shareImageUrl) URL.revokeObjectURL(shareImageUrl)
+    setShareImageUrl(null)
+    setShareBlob(null)
+    setIsShareOpen(false)
+  }
 
   const handleSubmit = async () => {
     if (!intent.trim() || isLoading) return
     setError(null)
     setIsLoading(true)
     setRawOutput('')
+    resetShareCard()
 
     const { style, author } = pickRandomStyleAndAuthor()
     setPickedStyle(style)
@@ -113,6 +327,39 @@ export default function XieClient() {
       setIsLoading(false)
     }
   }
+
+  const buildShareCard = async () => {
+    if (!parsed || !knowledge) return null
+    setIsGeneratingShare(true)
+    setError(null)
+    try {
+      const blob = await generateXieShareCard(
+        parsed.text,
+        parsed.styleUsed,
+        parsed.authorUsed,
+        knowledge.styleBio,
+        knowledge.authorBio
+      )
+      const url = URL.createObjectURL(blob)
+      if (shareImageUrl) URL.revokeObjectURL(shareImageUrl)
+      setShareBlob(blob)
+      setShareImageUrl(url)
+      return blob
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '分享图生成失败，请稍后再试。')
+      return null
+    } finally {
+      setIsGeneratingShare(false)
+    }
+  }
+
+  const handleOpenShare = async () => {
+    const blob = shareBlob ?? (await buildShareCard())
+    if (!blob) return
+    setIsShareOpen(true)
+  }
+
+  const handleCloseShare = () => setIsShareOpen(false)
 
   return (
     <div className="app xie-app">
@@ -174,6 +421,46 @@ export default function XieClient() {
               <h4>小知识</h4>
               <p><strong>{parsed.styleUsed}</strong>　{knowledge.styleBio}</p>
               <p><strong>{parsed.authorUsed}</strong>　{knowledge.authorBio}</p>
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            className="xie-share-icon-button xie-share-icon-button-floating"
+            onClick={handleOpenShare}
+            disabled={isGeneratingShare}
+            aria-label="生成高质量分享图片"
+            title="生成分享图片"
+          >
+            <svg viewBox="0 0 18 18" aria-hidden="true">
+              <path d={SHARE_ICON_PATH} />
+            </svg>
+          </button>
+
+          {isShareOpen && shareImageUrl ? (
+            <div
+              className="xie-share-sheet"
+              role="dialog"
+              aria-modal="true"
+              aria-label="分享图片预览"
+              onClick={handleCloseShare}
+            >
+              <div className="xie-share-sheet-card" onClick={(e) => e.stopPropagation()}>
+                <div className="xie-share-sheet-header">
+                  <p className="xie-share-sheet-title">可分享图片</p>
+                  <button
+                    type="button"
+                    className="xie-share-close"
+                    onClick={handleCloseShare}
+                    aria-label="关闭分享预览"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="xie-share-sheet-preview">
+                  <img src={shareImageUrl} alt="高质量分享图片预览" className="xie-share-sheet-image" />
+                </div>
+              </div>
             </div>
           ) : null}
         </section>

@@ -236,10 +236,10 @@ const generateShareCard = async (
 
     // Contain within (w × photoH): always shows full photo, no cropping
     const scale = Math.min(w / photo.width, photoH / photo.height)
-    const drawW = photo.width * scale
-    const drawH = photo.height * scale
-    const drawX = (w - drawW) / 2
-    const drawY = (photoH - drawH) / 2
+    const drawW = Math.round(photo.width * scale)
+    const drawH = Math.round(photo.height * scale)
+    const drawX = Math.round((w - drawW) / 2)
+    const drawY = Math.round((photoH - drawH) / 2)
 
     ctx.drawImage(photo, drawX, drawY, drawW, drawH)
 
