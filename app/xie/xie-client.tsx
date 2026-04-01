@@ -4,7 +4,9 @@ import { useState } from 'react'
 import Link from 'next/link'
 import {
   buildXieYangmingUserPrompt,
+  pickRandomStyle,
   XIE_YANGMING_SYSTEM_PROMPT,
+  type XieStyle,
 } from '@/data/xie-yangming'
 
 type XieOutput = {
@@ -38,11 +40,10 @@ const parseXieOutput = (raw: string): XieOutput | null => {
 
 const requestXie = async (
   intent: string,
+  style: XieStyle,
   onChunk?: (text: string) => void
 ) => {
-  const userPrompt = buildXieYangmingUserPrompt({
-    intent,
-  })
+  const userPrompt = buildXieYangmingUserPrompt({ intent, style })
 
   const response = await fetch('/api/llm', {
     method: 'POST',
@@ -94,8 +95,10 @@ export default function XieClient() {
     setIsLoading(true)
     setRawOutput('')
 
+    const style = pickRandomStyle()
+
     try {
-      const final = await requestXie(intent.trim(), (partial) => {
+      const final = await requestXie(intent.trim(), style, (partial) => {
         setRawOutput(partial)
       })
       setRawOutput(final)
