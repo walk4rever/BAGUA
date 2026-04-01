@@ -98,6 +98,59 @@ const wrapText = (
   return lines
 }
 
+// Draw "Name　bio text" inline: name is bold, bio wraps with full-width indent after first line.
+// Returns the y position after the last drawn line (i.e. next available y).
+const drawKnowledgeEntry = (
+  ctx: CanvasRenderingContext2D,
+  name: string,
+  bio: string,
+  x: number,
+  y: number,
+  maxW: number,
+  fontSize: number,
+  lineH: number
+): number => {
+  const nameWithSpace = name + '\u3000'
+  ctx.font = `700 ${fontSize}px "Noto Serif SC", serif`
+  const nameW = Math.ceil(ctx.measureText(nameWithSpace).width)
+
+  // Wrap bio: first line has less room (nameW taken by name)
+  ctx.font = `400 ${fontSize}px "Noto Serif SC", serif`
+  const chars = Array.from(bio)
+  const lines: string[] = []
+  let current = ''
+  let availW = maxW - nameW
+
+  for (const char of chars) {
+    const next = current + char
+    if (ctx.measureText(next).width <= availW) {
+      current = next
+    } else {
+      if (current) lines.push(current)
+      current = char
+      availW = maxW
+    }
+  }
+  if (current) lines.push(current)
+
+  // Name (bold) + first bio line on same row
+  ctx.fillStyle = '#3a3028'
+  ctx.font = `700 ${fontSize}px "Noto Serif SC", serif`
+  ctx.fillText(nameWithSpace, x, y)
+
+  ctx.fillStyle = '#5c5044'
+  ctx.font = `400 ${fontSize}px "Noto Serif SC", serif`
+  if (lines.length > 0) ctx.fillText(lines[0], x + nameW, y)
+
+  // Remaining bio lines at full left margin
+  for (let i = 1; i < lines.length; i++) {
+    y += lineH
+    ctx.fillText(lines[i], x, y)
+  }
+
+  return y + lineH
+}
+
 const generateXieShareCard = async (
   text: string,
   styleUsed: string,
@@ -150,10 +203,6 @@ const generateXieShareCard = async (
   ctx.font = `400 ${quoteSize}px "Noto Serif SC", serif`
   const quoteLines = wrapText(ctx, text, maxW, 10)
 
-  ctx.font = `400 ${bioTextSize}px "Noto Serif SC", serif`
-  const styleBioLines = wrapText(ctx, styleBio, maxW, 3)
-  const authorBioLines = wrapText(ctx, authorBio, maxW, 3)
-
   let y = 108
 
   // ── 文体 · 人物 ──────────────────────────────────────────
@@ -187,32 +236,12 @@ const generateXieShareCard = async (
   ctx.fillText('小知识', margin, y)
   y += labelSize + labelGap
 
-  // Style name + bio
-  ctx.fillStyle = '#3a3028'
-  ctx.font = `700 ${bioNameSize}px "Noto Serif SC", serif`
-  ctx.fillText(styleUsed, margin, y)
-  y += bioNameSize + 10
+  // Style name + bio (inline)
+  y = drawKnowledgeEntry(ctx, styleUsed, styleBio, margin, y, maxW, bioNameSize, bioLineH)
+  y += 12
 
-  ctx.fillStyle = '#5c5044'
-  ctx.font = `400 ${bioTextSize}px "Noto Serif SC", serif`
-  for (const line of styleBioLines) {
-    ctx.fillText(line, margin, y)
-    y += bioLineH
-  }
-  y += 28
-
-  // Author name + bio
-  ctx.fillStyle = '#3a3028'
-  ctx.font = `700 ${bioNameSize}px "Noto Serif SC", serif`
-  ctx.fillText(authorUsed, margin, y)
-  y += bioNameSize + 10
-
-  ctx.fillStyle = '#5c5044'
-  ctx.font = `400 ${bioTextSize}px "Noto Serif SC", serif`
-  for (const line of authorBioLines) {
-    ctx.fillText(line, margin, y)
-    y += bioLineH
-  }
+  // Author name + bio (inline)
+  y = drawKnowledgeEntry(ctx, authorUsed, authorBio, margin, y, maxW, bioNameSize, bioLineH)
 
   // QR
   try {
