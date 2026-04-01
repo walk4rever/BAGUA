@@ -98,6 +98,35 @@ const wrapText = (
   return lines
 }
 
+// Measure how many lines a knowledge entry will occupy (mirrors drawKnowledgeEntry logic).
+const measureKnowledgeEntry = (
+  ctx: CanvasRenderingContext2D,
+  name: string,
+  bio: string,
+  maxW: number,
+  fontSize: number
+): number => {
+  const nameWithSpace = name + '\u3000'
+  ctx.font = `700 ${fontSize}px "Noto Serif SC", serif`
+  const nameW = Math.ceil(ctx.measureText(nameWithSpace).width)
+  ctx.font = `400 ${fontSize}px "Noto Serif SC", serif`
+  const chars = Array.from(bio)
+  let lineCount = 1
+  let current = ''
+  let availW = maxW - nameW
+  for (const char of chars) {
+    const next = current + char
+    if (ctx.measureText(next).width <= availW) {
+      current = next
+    } else {
+      if (current) lineCount++
+      current = char
+      availW = maxW
+    }
+  }
+  return lineCount
+}
+
 // Draw "Name　bio text" inline: name is bold, bio wraps with full-width indent after first line.
 // Returns the y position after the last drawn line (i.e. next available y).
 const drawKnowledgeEntry = (
@@ -158,15 +187,50 @@ const generateXieShareCard = async (
   styleBio: string,
   authorBio: string
 ) => {
+  const w = SHARE_CARD_WIDTH   // 1080
+  const margin = 90
+  const maxW = w - margin * 2
+
+  // Type scale — larger for comfortable mobile reading
+  const labelSize = 28
+  const labelColor = '#96836e'
+  const labelGap = 20
+  const sectionGap = 72
+  const headerSize = 38
+  const quoteSize = 46
+  const quoteLineH = quoteSize + 34   // generous line height
+  const bioNameSize = 30
+  const bioLineH = bioNameSize + 24
+
+  // ── Measurement pass (no draw) ──────────────────────────
+  const tmpCanvas = document.createElement('canvas')
+  tmpCanvas.width = w
+  tmpCanvas.height = 100
+  const mCtx = tmpCanvas.getContext('2d')
+  if (!mCtx) throw new Error('分享图生成失败，请重试。')
+
+  mCtx.font = `400 ${quoteSize}px "Noto Serif SC", serif`
+  const quoteLines = wrapText(mCtx, text, maxW, 12)
+
+  const styleLineCount = measureKnowledgeEntry(mCtx, styleUsed, styleBio, maxW, bioNameSize)
+  const authorLineCount = measureKnowledgeEntry(mCtx, authorUsed, authorBio, maxW, bioNameSize)
+
+  const section1H = labelSize + labelGap + headerSize
+  const section2H = labelSize + labelGap + quoteLines.length * quoteLineH
+  const section3H = labelSize + labelGap + styleLineCount * bioLineH + 20 + authorLineCount * bioLineH
+  const contentH = section1H + sectionGap + section2H + sectionGap + section3H
+
+  // Dynamic canvas height: content + equal top/bottom padding + QR area
+  const padding = 130
+  const qrArea = 130
+  const h = Math.min(1920, contentH + padding * 2 + qrArea)
+
+  // ── Draw pass ───────────────────────────────────────────
   const canvas = document.createElement('canvas')
-  canvas.width = SHARE_CARD_WIDTH
-  canvas.height = SHARE_CARD_HEIGHT
+  canvas.width = w
+  canvas.height = h
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('分享图生成失败，请重试。')
-
-  const w = canvas.width
-  const h = canvas.height
-  const margin = 80
 
   // Background
   const bg = ctx.createLinearGradient(0, 0, 0, h)
@@ -177,7 +241,7 @@ const generateXieShareCard = async (
   ctx.fillRect(0, 0, w, h)
 
   // Warm glow
-  const glow = ctx.createRadialGradient(w * 0.18, h * 0.22, 20, w * 0.18, h * 0.22, 480)
+  const glow = ctx.createRadialGradient(w * 0.18, h * 0.22, 20, w * 0.18, h * 0.22, 500)
   glow.addColorStop(0, 'rgba(255,255,255,0.36)')
   glow.addColorStop(1, 'rgba(255,255,255,0)')
   ctx.fillStyle = glow
@@ -185,25 +249,7 @@ const generateXieShareCard = async (
 
   ctx.textBaseline = 'top'
 
-  // Type scale
-  const labelSize = 24       // section headers
-  const labelColor = '#96836e'
-  const labelGap = 18        // space below label before content
-  const sectionGap = 64      // space between sections
-  const headerSize = 32      // 文体·人物 value
-  const quoteSize = 38       // 章句 text
-  const quoteLineH = quoteSize + 34
-  const bioNameSize = 26     // 人物/文体 name in 小知识
-  const bioTextSize = 23     // bio body text
-  const bioLineH = bioTextSize + 22
-
-  const maxW = w - margin * 2
-
-  // Pre-wrap text blocks
-  ctx.font = `400 ${quoteSize}px "Noto Serif SC", serif`
-  const quoteLines = wrapText(ctx, text, maxW, 10)
-
-  let y = 108
+  let y = padding
 
   // ── 文体 · 人物 ──────────────────────────────────────────
   ctx.fillStyle = labelColor
@@ -236,23 +282,21 @@ const generateXieShareCard = async (
   ctx.fillText('小知识', margin, y)
   y += labelSize + labelGap
 
-  // Style name + bio (inline)
   y = drawKnowledgeEntry(ctx, styleUsed, styleBio, margin, y, maxW, bioNameSize, bioLineH)
-  y += 12
+  y += 20
 
-  // Author name + bio (inline)
-  y = drawKnowledgeEntry(ctx, authorUsed, authorBio, margin, y, maxW, bioNameSize, bioLineH)
+  drawKnowledgeEntry(ctx, authorUsed, authorBio, margin, y, maxW, bioNameSize, bioLineH)
 
-  // QR
+  // QR — anchored to canvas bottom
   try {
-    const qrSize = 96
+    const qrSize = 100
     const qrImage = await loadImage(SHARE_QR_PATH)
     ctx.globalAlpha = 0.45
     ctx.drawImage(qrImage, w - margin - qrSize, h - margin - qrSize, qrSize, qrSize)
     ctx.globalAlpha = 1
   } catch {
     ctx.fillStyle = '#a0907e'
-    ctx.font = '400 18px "Noto Serif SC", serif'
+    ctx.font = '400 20px "Noto Serif SC", serif'
     ctx.textAlign = 'right'
     ctx.textBaseline = 'bottom'
     ctx.fillText(SHARE_DEST_URL, w - margin, h - margin)
