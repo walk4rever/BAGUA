@@ -91,7 +91,7 @@ const generateDuShareCard = async (run: DailyRunWithPassage, date: string): Prom
   const contentLines = wrapText(mCtx, passage.content, maxW, 8)
 
   mCtx.font = `400 ${insightSize}px "Noto Serif SC", serif`
-  const insightLines = wrapText(mCtx, payload.insight, maxW)
+  const insightLines = wrapText(mCtx, payload.insight, maxW, 12)
 
   const section1H = dateLabelSize + 12 + sourceSize
   const section2H = sectionLabelSize + labelGap + contentLines.length * contentLineH
