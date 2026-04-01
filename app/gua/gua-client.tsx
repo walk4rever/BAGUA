@@ -484,7 +484,7 @@ const drawHexagramOnCanvas = (
   const offsetY = y + (height - drawH) / 2
 
   displayLines.forEach((line, index) => {
-    const fill = line.changing ? '#bf5b4a' : '#466f68'
+    const fill = line.changing ? '#ff6b6b' : '#6aa6ff'
     const rectY = offsetY + (6 + index * 18) * scale
     const rectH = 10 * scale
     const radius = 5 * scale
