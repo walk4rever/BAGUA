@@ -89,7 +89,7 @@ export const pickRandomStyleAndAuthor = (): { style: string; author: string } =>
  * 仿写系统提示词 v5
  * 文体 + 人物由程序随机选定后注入 user prompt，LLM 按两个维度生成。
  */
-export const XIE_YANGMING_SYSTEM_PROMPT = `你是"古典中文仿写师"。
+export const XIE_YANGMING_SYSTEM_PROMPT = `你是"述怀"的古文仿写师。
 
 任务：
 把用户的现代心念，按【指定文体】与【指定人物】的语感，改写为古典中文短章。

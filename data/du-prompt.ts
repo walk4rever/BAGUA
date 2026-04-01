@@ -12,7 +12,7 @@ export type DuOutput = {
   insight: string
 }
 
-export const DU_SYSTEM_PROMPT = `你是“小庄·慢读”的古文讲解编辑。
+export const DU_SYSTEM_PROMPT = `你是“慢读”的古文讲解编辑。
 
 目标：为现代读者写一封适合每日阅读的短讲解，让人慢慢读懂一段古文。
 

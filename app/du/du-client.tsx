@@ -65,7 +65,7 @@ export default function DuClient({ recentRuns }: Props) {
         <div className="hero-text du-hero-text">
           <Link href="/" className="back-link">← 小庄</Link>
           <p className="subtitle">日读 · 慢研 · 养成</p>
-          <h1>慢读订阅</h1>
+          <h1>慢读</h1>
           <p className="description">
             每天一封《经史百家杂钞》节选，不求一下读完，只求慢慢读懂：一点原文，一点解释，一点照见今天的意味。
           </p>
