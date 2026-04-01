@@ -138,8 +138,8 @@ const generateXieShareCard = async (
   const labelGap = 18        // space below label before content
   const sectionGap = 64      // space between sections
   const headerSize = 32      // 文体·人物 value
-  const quoteSize = 44       // 章句 text
-  const quoteLineH = quoteSize + 22
+  const quoteSize = 38       // 章句 text
+  const quoteLineH = quoteSize + 34
   const bioNameSize = 26     // 人物/文体 name in 小知识
   const bioTextSize = 23     // bio body text
   const bioLineH = bioTextSize + 14
@@ -147,7 +147,7 @@ const generateXieShareCard = async (
   const maxW = w - margin * 2
 
   // Pre-wrap text blocks
-  ctx.font = `700 ${quoteSize}px "Noto Serif SC", serif`
+  ctx.font = `400 ${quoteSize}px "Noto Serif SC", serif`
   const quoteLines = wrapText(ctx, text, maxW, 10)
 
   ctx.font = `400 ${bioTextSize}px "Noto Serif SC", serif`
@@ -174,7 +174,7 @@ const generateXieShareCard = async (
   y += labelSize + labelGap
 
   ctx.fillStyle = '#1c1714'
-  ctx.font = `700 ${quoteSize}px "Noto Serif SC", serif`
+  ctx.font = `400 ${quoteSize}px "Noto Serif SC", serif`
   for (const line of quoteLines) {
     ctx.fillText(line, margin, y)
     y += quoteLineH
