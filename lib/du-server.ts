@@ -40,7 +40,11 @@ const env = {
   appBaseUrl:
     process.env.APP_BASE_URL ??
     process.env.NEXT_PUBLIC_APP_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'),
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : 'http://localhost:3000'),
   duFromEmail: process.env.DU_FROM_EMAIL,
   duAdminEmail: process.env.DU_ADMIN_EMAIL,
   cronSecret: process.env.CRON_SECRET,
@@ -87,7 +91,15 @@ const generateToken = (): string =>
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('')
 
-export const subscribeEmail = async (email: string): Promise<string> => {
+export const subscribeEmail = async (email: string): Promise<{ token: string; alreadyActive: boolean }> => {
+  // 检查是否已经是 active 订阅者
+  const existing = await supabaseFetch<{ status: string }[]>(
+    `xz_du_subscribers?email=eq.${encodeURIComponent(email)}&select=status`
+  )
+  if (existing.length > 0 && existing[0].status === 'active') {
+    return { token: '', alreadyActive: true }
+  }
+
   const token = generateToken()
   await supabaseFetch('xz_du_subscribers?on_conflict=email', {
     method: 'POST',
@@ -99,7 +111,7 @@ export const subscribeEmail = async (email: string): Promise<string> => {
       unsubscribed_at: null,
     }]),
   })
-  return token
+  return { token, alreadyActive: false }
 }
 
 export const confirmSubscription = async (token: string): Promise<boolean> => {

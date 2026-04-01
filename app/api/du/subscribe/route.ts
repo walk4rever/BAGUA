@@ -16,7 +16,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const token = await subscribeEmail(email)
+    const { token, alreadyActive } = await subscribeEmail(email)
+    if (alreadyActive) {
+      return Response.json({ message: '该邮箱已订阅，无需重复操作。' })
+    }
     await sendConfirmEmail(email, token)
     return Response.json({ message: '确认邮件已发送，请查收并点击链接完成订阅。' })
   } catch (error) {
