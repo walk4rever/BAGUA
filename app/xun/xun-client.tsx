@@ -200,16 +200,64 @@ const generateShareCard = async (
   image: ImageAsset | null,
   template: ShareTemplate
 ) => {
+  const w = SHARE_WIDTH
+  const margin = SHARE_MARGIN
+  const usePhotoTemplate = template === 'photo' && Boolean(image)
+
+  // Typography constants
+  const quoteFontSize = usePhotoTemplate ? 42 : 52
+  const quoteLineH = quoteFontSize + 24
+  const sourceFontSize = 26
+  const interpretFontSize = usePhotoTemplate ? 25 : 27
+  const interpretLineH = interpretFontSize + 18
+
+  // ── Measurement pass ──────────────────────────────────────
+  const tmp = document.createElement('canvas')
+  tmp.width = w
+  tmp.height = 100
+  const mCtx = tmp.getContext('2d')!
+
+  mCtx.font = `700 ${quoteFontSize}px "Noto Serif SC", serif`
+  const quoteLines = wrapText(mCtx, result.quote, w - margin * 2, usePhotoTemplate ? 4 : 5)
+
+  mCtx.font = `400 ${interpretFontSize}px "Noto Serif SC", serif`
+  const interpretLines = wrapText(
+    mCtx,
+    result.interpretation.trim().replace(/\n+/g, ' '),
+    w - margin * 2,
+    usePhotoTemplate ? 5 : 8
+  )
+
+  const blockH =
+    quoteLines.length * quoteLineH +
+    32 + sourceFontSize + 56 +   // source row
+    48 +                          // divider gap
+    interpretLines.length * interpretLineH
+
+  const footerArea = 64 + SHARE_QR_SIZE + margin  // gap + QR + bottom margin
+
+  // ── Compute canvas height ─────────────────────────────────
+  let h: number
+  let contentStartY: number
+
+  if (usePhotoTemplate && image) {
+    const naturalH = Math.round(image.height * (w / image.width))
+    const photoH = Math.min(naturalH, 800)
+    contentStartY = photoH + 64
+    h = Math.max(SHARE_CARD_HEIGHT, contentStartY + blockH + footerArea)
+  } else {
+    // Center content in the space above the footer area
+    h = Math.max(SHARE_CARD_HEIGHT, 280 + blockH + footerArea)
+    const availableH = h - footerArea
+    contentStartY = Math.max(140, (availableH * 0.62 - blockH) / 2)
+  }
+
+  // ── Draw pass ─────────────────────────────────────────────
   const canvas = document.createElement('canvas')
-  canvas.width = SHARE_WIDTH
-  canvas.height = SHARE_CARD_HEIGHT
+  canvas.width = w
+  canvas.height = h
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('分享图生成失败，请重试。')
-
-  const w = canvas.width
-  const h = canvas.height
-  const usePhotoTemplate = template === 'photo' && Boolean(image)
-  const margin = SHARE_MARGIN
 
   // Background
   const bg = ctx.createLinearGradient(0, 0, 0, h)
@@ -220,72 +268,28 @@ const generateShareCard = async (
   ctx.fillRect(0, 0, w, h)
 
   ctx.textBaseline = 'top'
-  let y = 0
+  let y = contentStartY
 
   if (usePhotoTemplate && image) {
-    // Photo: contain (no cropping), adaptive height, full-width when possible
     const photo = await loadImage(image.dataUrl)
-
-    // Natural height if scaled to full card width
     const naturalH = Math.round(photo.height * (w / photo.width))
-    // Cap so text still has room; very tall portraits will be contained within cap
-    const maxPhotoH = 800
-    const photoH = Math.min(naturalH, maxPhotoH)
-
-    // Contain within (w × photoH): always shows full photo, no cropping
+    const photoH = Math.min(naturalH, 800)
     const scale = Math.min(w / photo.width, photoH / photo.height)
     const drawW = Math.round(photo.width * scale)
     const drawH = Math.round(photo.height * scale)
-    const drawX = Math.round((w - drawW) / 2)
-    const drawY = Math.round((photoH - drawH) / 2)
+    ctx.drawImage(photo, Math.round((w - drawW) / 2), Math.round((photoH - drawH) / 2), drawW, drawH)
 
-    ctx.drawImage(photo, drawX, drawY, drawW, drawH)
-
-    // Gradient fade photo bottom into background
     const fade = ctx.createLinearGradient(0, photoH - 120, 0, photoH)
     fade.addColorStop(0, 'rgba(242, 235, 224, 0)')
     fade.addColorStop(1, 'rgba(242, 235, 224, 0.6)')
     ctx.fillStyle = fade
     ctx.fillRect(0, 0, w, photoH)
-
-    y = photoH + 64
   } else {
-    // Subtle warm glow for quote-only template
     const glow = ctx.createRadialGradient(w * 0.2, h * 0.28, 20, w * 0.2, h * 0.28, 520)
     glow.addColorStop(0, 'rgba(255,255,255,0.4)')
     glow.addColorStop(1, 'rgba(255,255,255,0)')
     ctx.fillStyle = glow
     ctx.fillRect(0, 0, w, h)
-    y = 0
-  }
-
-  // Typography constants
-  const quoteFontSize = usePhotoTemplate ? 42 : 52
-  const quoteLineH = quoteFontSize + 24
-  const sourceFontSize = 26
-  const interpretFontSize = usePhotoTemplate ? 25 : 27
-  const interpretLineH = interpretFontSize + 18
-
-  // Pre-calculate wrapping
-  ctx.font = `700 ${quoteFontSize}px "Noto Serif SC", serif`
-  const quoteLines = wrapText(ctx, result.quote, w - margin * 2, usePhotoTemplate ? 4 : 5)
-
-  ctx.font = `400 ${interpretFontSize}px "Noto Serif SC", serif`
-  const interpretLines = wrapText(
-    ctx,
-    result.interpretation.trim().replace(/\n+/g, ' '),
-    w - margin * 2,
-    usePhotoTemplate ? 5 : 8
-  )
-
-  // Quote-only: vertically centre block in top 62% of card
-  if (!usePhotoTemplate) {
-    const blockH =
-      quoteLines.length * quoteLineH +
-      32 + sourceFontSize +
-      80 +
-      interpretLines.length * interpretLineH
-    y = Math.max(140, (h * 0.62 - blockH) / 2)
   }
 
   // Quote
@@ -295,7 +299,6 @@ const generateShareCard = async (
     ctx.fillText(line, margin, y)
     y += quoteLineH
   }
-
   y += 32
 
   // Source
@@ -304,14 +307,13 @@ const generateShareCard = async (
   ctx.fillText(`—— ${result.source}`, margin, y)
   y += sourceFontSize + 56
 
-  // Thin divider line
+  // Divider
   ctx.strokeStyle = 'rgba(148, 122, 88, 0.28)'
   ctx.lineWidth = 1.5
   ctx.beginPath()
   ctx.moveTo(margin, y)
   ctx.lineTo(margin + 160, y)
   ctx.stroke()
-
   y += 48
 
   // Interpretation
@@ -322,10 +324,10 @@ const generateShareCard = async (
     y += interpretLineH
   }
 
-  await drawShareFooter(ctx, w, h - margin - SHARE_QR_SIZE, '寻章')
+  // Footer: fixed gap below content
+  await drawShareFooter(ctx, w, y + 64, '寻章')
 
   ctx.textBaseline = 'alphabetic'
-
   return await canvasToBlob(canvas, 0.92)
 }
 
