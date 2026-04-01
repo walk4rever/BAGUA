@@ -393,24 +393,24 @@ const buildMailHtml = (runDate: string, passage: Passage, payload: DuOutput): st
   <p style="color:#6b5f54;margin-bottom:4px;">${runDate} · ${passage.source_book}</p>
   <h2 style="margin:0 0 20px;">${source}</h2>
 
-  <h3>今日原文</h3>
+  <h3>原文</h3>
   <p style="background:#faf7f2;padding:16px;border-radius:8px;border-left:3px solid #c8b49a;">
     ${passage.content.replace(/\n/g, '<br/>')}
   </p>
 
-  <h3>一句话说清它</h3>
+  <h3>一句话</h3>
   <p>${payload.summary}</p>
 
-  <h3>慢慢读它</h3>
+  <h3>慢慢读</h3>
   <p>${payload.translation}</p>
 
-  <h3>值得停一下的词</h3>
+  <h3>关键词</h3>
   <ul>${keywordHtml}</ul>
 
-  <h3>这段文字怎么展开的</h3>
+  <h3>析结构</h3>
   <p>${payload.structure}</p>
 
-  <h3>和今天的我们有什么关系</h3>
+  <h3>启示</h3>
   <p>${payload.insight}</p>
 
   <div style="margin:28px 0;text-align:center;">

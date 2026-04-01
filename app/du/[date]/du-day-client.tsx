@@ -264,7 +264,7 @@ export default function DuDayClient({ run, date }: Props) {
 
             {/* 关键词 */}
             <div className="du-day-section">
-              <span className="du-day-label">值得停一下的词</span>
+              <span className="du-day-label">关键词</span>
               <ul className="du-day-keywords">
                 {payload.keywords.map((k) => (
                   <li key={k.term}>
