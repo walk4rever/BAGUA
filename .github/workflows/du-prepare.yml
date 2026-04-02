@@ -1,27 +1,42 @@
-name: 慢读 · 每日选文
+name: 慢读 · 每日选文与发送
 
 on:
   schedule:
-    # 每天北京时间 01:00 (UTC 17:00 前一天)
-    - cron: '0 17 * * *'
+    # 每天北京时间 08:00 (UTC 00:00)
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
-  prepare:
+  prepare-and-send:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: 触发慢读准备接口
+      - name: 选文
         run: |
-          response=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+          response=$(curl -s -o /tmp/prepare.json -w "%{http_code}" \
             -X POST "${{ secrets.XIAOZHUANG_URL }}/api/du/cron/prepare" \
             -H "Content-Type: application/json" \
             -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
             -d '{}')
           echo "HTTP status: $response"
-          cat /tmp/response.json
+          cat /tmp/prepare.json
           if [ "$response" -ne 200 ] && [ "$response" -ne 208 ]; then
-            echo "❌ 准备失败，状态码: $response"
+            echo "❌ 选文失败，状态码: $response"
             exit 1
           fi
-          echo "✅ 准备完成"
+          echo "✅ 选文完成"
+
+      - name: 批量发送
+        run: |
+          response=$(curl -s -o /tmp/send.json -w "%{http_code}" \
+            -X POST "${{ secrets.XIAOZHUANG_URL }}/api/du/cron/send" \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            -d '{}')
+          echo "HTTP status: $response"
+          cat /tmp/send.json
+          if [ "$response" -ne 200 ]; then
+            echo "❌ 发送失败，状态码: $response"
+            exit 1
+          fi
+          echo "✅ 发送完成"

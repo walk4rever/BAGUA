@@ -176,27 +176,16 @@ export const sendConfirmEmail = async (email: string, token: string): Promise<vo
 }
 
 // ---------------------------------------------------------------------------
-// Passage selection  —  优先未发送，其次最早发送
+// Passage selection  —  从未发送过的里随机选，库存耗尽则报错
 // ---------------------------------------------------------------------------
 export const pickTodayPassage = async (): Promise<Passage> => {
-  // 先找从未发送、且已有 payload 的
   const unsent = await supabaseFetch<Passage[]>(
     'xz_du_passages?select=id,source_book,source_origin,title,content,difficulty,theme,payload' +
-      '&enabled=eq.true&last_sent_at=is.null&payload=not.is.null&order=id.asc&limit=200'
+      '&enabled=eq.true&last_sent_at=is.null&payload=not.is.null&limit=500'
   )
 
-  if (unsent.length > 0) {
-    return unsent[Math.floor(Math.random() * unsent.length)]
-  }
-
-  // 全部发过，取最早发送的（且有 payload）
-  const oldest = await supabaseFetch<Passage[]>(
-    'xz_du_passages?select=id,source_book,source_origin,title,content,difficulty,theme,payload' +
-      '&enabled=eq.true&payload=not.is.null&order=last_sent_at.asc&limit=200'
-  )
-
-  if (!oldest.length) throw new Error('No passages with payload in xz_du_passages')
-  return oldest[Math.floor(Math.random() * oldest.length)]
+  if (!unsent.length) throw new Error('All passages have been sent. Please seed more content.')
+  return unsent[Math.floor(Math.random() * unsent.length)]
 }
 
 // ---------------------------------------------------------------------------
