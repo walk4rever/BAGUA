@@ -539,6 +539,23 @@
   padding: 1rem 0;
 }
 
+.du-admin-regen-btn {
+  font-size: 0.78rem;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.du-admin-regen-btn:hover {
+  color: var(--ink-0);
+  border-color: var(--ink-1);
+}
+
 /* 背景提示 */
 .du-day-context {
   font-size: 0.82rem;

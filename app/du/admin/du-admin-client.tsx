@@ -8,6 +8,7 @@ interface RunSummary {
   run_date: string
   sent_count: number
   passage: {
+    id: number
     source_origin: string | null
     title: string | null
     payload: unknown
@@ -160,6 +161,17 @@ export default function DuAdminClient() {
       handleApiError(e)
     } finally {
       setBusy(null)
+    }
+  }
+
+  const handleRegenerate = async (passageId: number, title: string) => {
+    if (!confirm(`重新生成 AI 解读？\n${title}`)) return
+    addLog(`重新生成：${title}…`)
+    try {
+      const data = await callApi('/api/du/admin/regenerate', { passageId })
+      addLog(data.error ? `✗ ${data.error}` : `✓ 已重新生成：${data.title}`)
+    } catch (e) {
+      handleApiError(e)
     }
   }
 
@@ -332,6 +344,10 @@ export default function DuAdminClient() {
                     </span>
                     <span className="du-admin-history-sent">{r.sent_count} 封</span>
                     <Link href={`/du/${r.run_date}`} className="du-admin-link" target="_blank">阅读</Link>
+                    <button
+                      className="du-admin-regen-btn"
+                      onClick={() => handleRegenerate(r.passage.id, r.passage.title ?? '')}
+                    >重新生成</button>
                   </li>
                 ))
                 : (library.items as PassageSummary[]).map((p) => (
@@ -340,6 +356,10 @@ export default function DuAdminClient() {
                       {[p.source_origin, p.title].filter(Boolean).join(' · ')}
                     </span>
                     <Link href={`/du/preview/${p.id}`} className="du-admin-link" target="_blank">阅读</Link>
+                    <button
+                      className="du-admin-regen-btn"
+                      onClick={() => handleRegenerate(p.id, p.title ?? '')}
+                    >重新生成</button>
                   </li>
                 ))
               }

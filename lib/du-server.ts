@@ -313,7 +313,7 @@ export const getSentPassages = async (page: number, limit: number): Promise<{ it
   const { data, total } = await supabaseFetchPaged<{
     id: number; run_date: string; passage_id: number; sent_count: number; xz_du_passages: Passage
   }>(
-    `xz_du_daily_runs?select=id,run_date,passage_id,sent_count,xz_du_passages(id,source_book,source_origin,title,difficulty,theme)&order=run_date.desc&limit=${limit}&offset=${offset}`
+    `xz_du_daily_runs?select=id,run_date,passage_id,sent_count,xz_du_passages(id,source_origin,title,difficulty,theme)&order=run_date.desc&limit=${limit}&offset=${offset}`
   )
   return {
     items: data.map((row) => ({ id: row.id, run_date: row.run_date, passage_id: row.passage_id, sent_count: row.sent_count, passage: row.xz_du_passages })),
