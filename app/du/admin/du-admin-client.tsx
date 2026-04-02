@@ -312,11 +312,11 @@ export default function DuAdminClient() {
         <div className="du-admin-tabs">
           <button
             className={`du-admin-tab ${libTab === 'sent' ? 'du-admin-tab-active' : ''}`}
-            onClick={() => { setLibTab('sent'); setLibPage(1) }}
+            onClick={() => { setLibrary(null); setLibTab('sent'); setLibPage(1) }}
           >已发送</button>
           <button
             className={`du-admin-tab ${libTab === 'unsent' ? 'du-admin-tab-active' : ''}`}
-            onClick={() => { setLibTab('unsent'); setLibPage(1) }}
+            onClick={() => { setLibrary(null); setLibTab('unsent'); setLibPage(1) }}
           >待发送</button>
         </div>
 
