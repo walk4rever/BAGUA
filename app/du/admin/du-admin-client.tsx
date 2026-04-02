@@ -339,6 +339,7 @@ export default function DuAdminClient() {
                     <span className="du-admin-history-source">
                       {[p.source_origin, p.title].filter(Boolean).join(' · ')}
                     </span>
+                    <Link href={`/du/preview/${p.id}`} className="du-admin-link" target="_blank">阅读</Link>
                   </li>
                 ))
               }

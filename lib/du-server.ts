@@ -211,6 +211,13 @@ export const pickTodayPassage = async (): Promise<Passage> => {
   return unsent[Math.floor(Math.random() * unsent.length)]
 }
 
+export const getPassageById = async (id: number): Promise<Passage | null> => {
+  const rows = await supabaseFetch<Passage[]>(
+    `xz_du_passages?select=id,source_book,source_origin,title,content,difficulty,theme,payload&id=eq.${id}&limit=1`
+  )
+  return rows[0] ?? null
+}
+
 // ---------------------------------------------------------------------------
 // Daily runs
 // ---------------------------------------------------------------------------
