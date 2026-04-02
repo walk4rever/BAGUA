@@ -516,7 +516,7 @@
 
 .du-admin-tab-active {
   background: var(--ink-0);
-  color: var(--paper);
+  color: #fbf8f1;
   border-color: var(--ink-0);
 }
 
