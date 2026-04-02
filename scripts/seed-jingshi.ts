@@ -6,9 +6,9 @@
  *   SUPABASE_SERVICE_ROLE_KEY=eyJ...
  *
  * Usage:
- *   npx tsx scripts/seed-du-passages.ts            # 全部入库
- *   npx tsx scripts/seed-du-passages.ts --volume=1  # 只入卷一
- *   npx tsx scripts/seed-du-passages.ts --volume=1,2 # 只入卷一和卷二
+ *   npx tsx scripts/seed-jingshi.ts            # 全部入库
+ *   npx tsx scripts/seed-jingshi.ts --volume=1  # 只入卷一
+ *   npx tsx scripts/seed-jingshi.ts --volume=1,2 # 只入卷一和卷二
  */
 
 import { readFileSync } from 'fs'
@@ -43,7 +43,7 @@ if (!supabaseUrl || !serviceRoleKey) {
 }
 
 // ---------------------------------------------------------------------------
-// Parse txt → passage objects  (same logic as parse-du-passages.ts)
+// Parse txt → passage objects  (same logic as parse-jingshi.ts)
 // ---------------------------------------------------------------------------
 const THEME_MAP: Array<[RegExp, string]> = [
   [/论著/, '论著'],
