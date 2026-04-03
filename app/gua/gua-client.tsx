@@ -809,10 +809,7 @@ export default function GuaClient() {
   }
 
   const handleCast = async () => {
-    if (hasResult || isCasting) {
-      resetCast()
-      return
-    }
+    if (isCasting) return
     castIdRef.current += 1
     const castId = castIdRef.current
     resetShareCard()
@@ -977,9 +974,11 @@ export default function GuaClient() {
               起卦遵循三枚铜钱法，共六爻自下而上。数得六（老阴）或九（老阳）为变爻，将用金纹标记。
             </p>
           </div>
-          <button className="cast-button" onClick={handleCast}>
-            八卦一下
-          </button>
+          {!hasResult && !isCasting ? (
+            <button className="cast-button" onClick={handleCast}>
+              八卦一下
+            </button>
+          ) : null}
         </div>
       </section>
 
@@ -1055,7 +1054,7 @@ export default function GuaClient() {
             </button>
 
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-              <button className="cast-button" onClick={handleCast}>放空一下</button>
+              <button className="cast-button" onClick={resetCast}>放空一下</button>
             </div>
 
             {isShareOpen && shareImageUrl ? (
