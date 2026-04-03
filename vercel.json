@@ -1,9 +1,7 @@
 {
   "framework": "nextjs",
   "crons": [
-    {
-      "path": "/api/du/cron/send",
-      "schedule": "30 23 * * *"
-    }
+    { "path": "/api/du/cron/prepare", "schedule": "0 0 * * *" },
+    { "path": "/api/du/cron/send", "schedule": "10 0 * * *" }
   ]
 }

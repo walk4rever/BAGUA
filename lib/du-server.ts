@@ -602,7 +602,10 @@ export const sendTestEmail = async (
 // Auth
 // ---------------------------------------------------------------------------
 export const verifyCronSecret = (incoming: string | null): boolean => {
-  const expected = env.cronSecret
-  if (!expected) return true
-  return incoming === expected
+  const cronSecret = env.cronSecret
+  const vercelCronSecret = process.env.VERCEL_CRON_SECRET
+  if (!cronSecret && !vercelCronSecret) return true
+  if (cronSecret && incoming === cronSecret) return true
+  if (vercelCronSecret && incoming === vercelCronSecret) return true
+  return false
 }

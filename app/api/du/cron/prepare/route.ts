@@ -9,6 +9,49 @@ import {
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
+export async function GET(request: Request) {
+  const bearer = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? null
+  if (!verifyCronSecret(bearer)) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const runDate = new Date().toISOString().slice(0, 10)
+
+  try {
+    const existing = await getRunByDate(runDate)
+    if (existing) {
+      return Response.json({
+        message: 'Already prepared today',
+        runDate,
+        passageId: existing.passage_id,
+        title: existing.passage.title,
+      })
+    }
+
+    const passage = await pickTodayPassage()
+
+    if (!passage.payload) {
+      return Response.json(
+        { error: 'Passage has no payload yet. Run generate-payloads script first.', passageId: passage.id },
+        { status: 422 }
+      )
+    }
+
+    await saveDailyRun(runDate, passage.id)
+
+    return Response.json({
+      message: 'Prepared',
+      runDate,
+      passageId: passage.id,
+      sourceOrigin: passage.source_origin,
+      title: passage.title,
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Prepare failed'
+    return Response.json({ error: message }, { status: 500 })
+  }
+}
+
 export async function POST(request: Request) {
   const bearer = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? null
   const incomingSecret = request.headers.get('x-cron-secret') ?? bearer
