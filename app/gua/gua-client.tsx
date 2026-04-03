@@ -978,7 +978,7 @@ export default function GuaClient() {
             </p>
           </div>
           <button className="cast-button" onClick={handleCast}>
-            {hasResult || isCasting ? '放空一下' : '八卦一下'}
+            八卦一下
           </button>
         </div>
       </section>
@@ -1053,6 +1053,10 @@ export default function GuaClient() {
                 <path d={SHARE_ICON_PATH} />
               </svg>
             </button>
+
+            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+              <button className="cast-button" onClick={handleCast}>放空一下</button>
+            </div>
 
             {isShareOpen && shareImageUrl ? (
               <div
