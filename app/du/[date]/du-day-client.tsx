@@ -441,26 +441,24 @@ export default function DuDayClient({ run, date, context }: Props) {
         )}
       </section>
 
-      {/* 分享弹窗 */}
+      {/* 分享弹窗 — 极简结构，避免 iOS 长按截取到父元素 CSS */}
       {isShareOpen && (
-        <div className="du-share-sheet" onClick={closeShare}>
-          <div className="du-share-sheet-inner" onClick={(e) => e.stopPropagation()}>
-            <div className="du-share-sheet-header">
-              <h3 className="du-share-sheet-title">长按图片保存</h3>
-              <button className="du-share-close" onClick={closeShare} aria-label="关闭">×</button>
-            </div>
-
-            {isGenerating && (
-              <div className="du-share-generating">生成中…</div>
-            )}
-            {shareImageUrl && (
-              <img
-                className="du-share-sheet-image"
-                src={shareImageUrl}
-                alt="慢读分享长图预览"
-              />
-            )}
+        <div className="du-share-sheet">
+          <div className="du-share-sheet-topbar">
+            <span className="du-share-sheet-title">长按图片保存</span>
+            <button className="du-share-close" onClick={closeShare} aria-label="关闭">×</button>
           </div>
+
+          {isGenerating && (
+            <div className="du-share-generating">生成中…</div>
+          )}
+          {shareImageUrl && (
+            <img
+              className="du-share-sheet-image"
+              src={shareImageUrl}
+              alt="慢读分享长图预览"
+            />
+          )}
         </div>
       )}
     </div>
