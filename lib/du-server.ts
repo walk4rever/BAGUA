@@ -16,6 +16,7 @@ export type Passage = {
   content: string
   difficulty: number
   theme: string | null
+  volume?: number | null
   payload: DuOutput | null
 }
 

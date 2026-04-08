@@ -6,6 +6,7 @@
  *   npx tsx scripts/generate-payloads.ts           # 全部未生成的
  *   npx tsx scripts/generate-payloads.ts --limit=10 # 只生成前10条（测试用）
  *   npx tsx scripts/generate-payloads.ts --id=42    # 只重新生成指定 id
+ *   npx tsx scripts/generate-payloads.ts --volume=2 # 只生成卷二
  */
 
 import { resolve, dirname } from 'path'
@@ -45,6 +46,7 @@ interface Passage {
   source_origin: string | null
   title: string | null
   content: string
+  volume?: number | null
 }
 
 // ---------------------------------------------------------------------------
@@ -68,14 +70,16 @@ const supaFetch = async <T>(path: string, init?: RequestInit): Promise<T> => {
   return res.json()
 }
 
-const fetchPassages = async (limit: number, id?: number): Promise<Passage[]> => {
+const fetchPassages = async (limit: number, id?: number, volume?: number): Promise<Passage[]> => {
   if (id !== undefined) {
     return supaFetch<Passage[]>(
-      `xz_du_passages?select=id,source_origin,title,content&id=eq.${id}`
+      `xz_du_passages?select=id,source_origin,title,content,volume&id=eq.${id}`
     )
   }
+
+  const volumeFilter = volume !== undefined ? `&volume=eq.${volume}` : ''
   return supaFetch<Passage[]>(
-    `xz_du_passages?select=id,source_origin,title,content&payload=is.null&enabled=eq.true&order=id.asc&limit=${limit}`
+    `xz_du_passages?select=id,source_origin,title,content,volume&payload=is.null&enabled=eq.true${volumeFilter}&order=id.asc&limit=${limit}`
   )
 }
 
@@ -150,10 +154,12 @@ const callAI = async (passage: Passage): Promise<DuOutput> => {
 const argv = process.argv.slice(2)
 const limitArg = argv.find((a) => a.startsWith('--limit='))
 const idArg = argv.find((a) => a.startsWith('--id='))
+const volumeArg = argv.find((a) => a.startsWith('--volume='))
 const limit = limitArg ? parseInt(limitArg.replace('--limit=', ''), 10) : 9999
 const targetId = idArg ? parseInt(idArg.replace('--id=', ''), 10) : undefined
+const targetVolume = volumeArg ? parseInt(volumeArg.replace('--volume=', ''), 10) : undefined
 
-const passages = await fetchPassages(limit, targetId)
+const passages = await fetchPassages(limit, targetId, targetVolume)
 console.log(`Found ${passages.length} passages to process`)
 
 let success = 0
