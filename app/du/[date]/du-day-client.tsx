@@ -126,24 +126,6 @@ const generateDuShareCard = async (
       return total + linesHeight + trailingGap
     }, 0)
 
-  const section1H = dateLabelSize + 12 + sourceSize
-  const section2H = contextLines.length ? contextLines.length * contextLineH : 0
-  const section3H = sectionLabelSize + labelGap + measureParagraphBlock(contentParagraphs, contentLineH)
-  const section4H = sectionLabelSize + labelGap + summaryLines.length * summaryLineH
-  const section5H = sectionLabelSize + labelGap + measureParagraphBlock(translationParagraphs, translationLineH)
-  const section6H = sectionLabelSize + labelGap + measureParagraphBlock(insightParagraphs, insightLineH)
-  const contentH =
-    section1H +
-    sectionGap +
-    (section2H ? section2H + sectionGap : 0) +
-    section3H +
-    sectionGap +
-    section4H +
-    sectionGap +
-    section5H +
-    sectionGap +
-    section6H
-
   const paddingTop = 120
   const paddingBottom = 80
   const footerGap = 64
