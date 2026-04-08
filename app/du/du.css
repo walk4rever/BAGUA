@@ -310,9 +310,9 @@
 
 .du-share-sheet-preview {
   overflow: auto;
-  background: rgba(255, 255, 255, 0.84);
-  border: 1px solid var(--line-soft);
-  border-radius: 12px;
+  background: none;
+  border: none;
+  border-radius: 0;
   min-height: 120px;
   max-height: calc(100vh - 8rem);
   display: flex;
@@ -330,7 +330,7 @@
 .du-share-sheet-image {
   width: 100%;
   display: block;
-  border-radius: 12px;
+  border-radius: 0;
 }
 
 .du-share-save-btn {

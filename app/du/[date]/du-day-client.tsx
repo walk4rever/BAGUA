@@ -146,8 +146,46 @@ const generateDuShareCard = async (
 
   const paddingTop = 120
   const paddingBottom = 80
-  const footerTop = paddingTop + contentH + 64
-  const h = footerTop + SHARE_QR_SIZE + paddingBottom
+  const footerGap = 64
+
+  // Simulate the draw to get exact y, then compute real canvas height.
+  // This avoids accumulated measurement drift for long articles.
+  const simulateY = (): number => {
+    let sy = paddingTop
+    // section1: date + source
+    sy += dateLabelSize + 12 + sourceSize + sectionGap
+    // section2: context
+    if (contextLines.length) {
+      sy += contextLines.length * contextLineH + sectionGap
+    }
+    // section3: 原文
+    sy += sectionLabelSize + labelGap
+    for (let i = 0; i < contentParagraphs.length; i += 1) {
+      sy += contentParagraphs[i].length * contentLineH
+      if (i < contentParagraphs.length - 1) sy += paragraphGap
+    }
+    sy += sectionGap
+    // section4: 一句话
+    sy += sectionLabelSize + labelGap + summaryLines.length * summaryLineH + sectionGap
+    // section5: 慢慢读
+    sy += sectionLabelSize + labelGap
+    for (let i = 0; i < translationParagraphs.length; i += 1) {
+      sy += translationParagraphs[i].length * translationLineH
+      if (i < translationParagraphs.length - 1) sy += paragraphGap
+    }
+    sy += sectionGap
+    // section6: 启示
+    sy += sectionLabelSize + labelGap
+    for (let i = 0; i < insightParagraphs.length; i += 1) {
+      sy += insightParagraphs[i].length * insightLineH
+      if (i < insightParagraphs.length - 1) sy += paragraphGap
+    }
+    return sy
+  }
+
+  const footerGap = 64
+  const footerTopY = simulateY() + footerGap
+  const h = footerTopY + SHARE_QR_SIZE + paddingBottom
 
   // Draw pass
   const canvas = document.createElement('canvas')
@@ -158,8 +196,7 @@ const generateDuShareCard = async (
   // Background gradient
   const bg = ctx.createLinearGradient(0, 0, 0, h)
   bg.addColorStop(0, '#f9f4ec')
-  bg.addColorStop(0.55, '#f2ebe0')
-  bg.addColorStop(1, '#ebe1d2')
+  bg.addColorStop(1, '#f0e8db')
   ctx.fillStyle = bg
   ctx.fillRect(0, 0, w, h)
 
@@ -265,7 +302,7 @@ const generateDuShareCard = async (
   }
 
   // ── Footer ────────────────────────────────────────────
-  await drawShareFooter(ctx, w, footerTop, '慢读')
+  await drawShareFooter(ctx, w, footerTopY, '慢读')
 
   return canvasToBlob(canvas)
 }
