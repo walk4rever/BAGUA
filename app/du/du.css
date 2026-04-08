@@ -137,9 +137,11 @@
 
 /* ── 阅读页 ─────────────────────────────────────── */
 
-.du-day-title {
-  font-size: 1.6rem;
-  margin: 0.2rem 0 0;
+.du-hero-text .du-day-title {
+  font-size: clamp(1.2rem, 2.2vw, 1.45rem);
+  line-height: 1.35;
+  letter-spacing: 0.04rem;
+  margin: 0.15rem 0 0;
 }
 
 .du-day-panel {
@@ -269,7 +271,7 @@
 .du-share-sheet-card {
   width: min(92vw, 520px);
   max-height: calc(100vh - 2rem);
-  overflow: auto;
+  overflow: hidden;
   border-radius: 26px;
   padding: 1rem;
   background: var(--paper-panel);
@@ -307,14 +309,16 @@
 }
 
 .du-share-sheet-preview {
-  overflow: hidden;
+  overflow: auto;
   background: rgba(255, 255, 255, 0.84);
   border: 1px solid var(--line-soft);
   border-radius: 12px;
   min-height: 120px;
+  max-height: calc(100vh - 8rem);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  -webkit-overflow-scrolling: touch;
 }
 
 .du-share-generating {

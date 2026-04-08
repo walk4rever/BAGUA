@@ -61,10 +61,17 @@ const wrapText = (
   return lines
 }
 
-const generateDuShareCard = async (run: DailyRunWithPassage, date: string): Promise<Blob> => {
+const splitParagraphs = (text: string): string[] => text.split('\n').map((line) => line.trim()).filter(Boolean)
+
+const generateDuShareCard = async (
+  run: DailyRunWithPassage,
+  date: string,
+  context?: PassageContext | null
+): Promise<Blob> => {
   const { passage } = run
   const payload = passage.payload!
   const source = [passage.source_origin, passage.title].filter(Boolean).join(' · ')
+  const contextLine = context?.contextLine ?? ''
 
   const w = SHARE_WIDTH
   const margin = SHARE_MARGIN
@@ -75,12 +82,19 @@ const generateDuShareCard = async (run: DailyRunWithPassage, date: string): Prom
   const sourceSize = 40
   const sectionLabelSize = 26
   const sectionLabelColor = '#96836e'
+  const contextSize = 28
+  const contextLineH = contextSize + 22
   const contentSize = 38
   const contentLineH = contentSize + 28
+  const summarySize = 34
+  const summaryLineH = summarySize + 22
+  const translationSize = 34
+  const translationLineH = translationSize + 24
   const insightSize = 34
   const insightLineH = insightSize + 26
   const sectionGap = 64
   const labelGap = 16
+  const paragraphGap = 16
 
   // Measure pass
   const tmp = document.createElement('canvas')
@@ -89,18 +103,51 @@ const generateDuShareCard = async (run: DailyRunWithPassage, date: string): Prom
   const mCtx = tmp.getContext('2d')!
 
   mCtx.font = `400 ${contentSize}px "Noto Serif SC", serif`
-  const contentLines = wrapText(mCtx, passage.content, maxW, 8)
+  const contentParagraphs = splitParagraphs(passage.content).map((line) => wrapText(mCtx, line, maxW - 20, 99))
+
+  mCtx.font = `400 ${contextSize}px "Noto Serif SC", serif`
+  const contextLines = contextLine ? wrapText(mCtx, contextLine, maxW, 3) : []
+
+  mCtx.font = `500 ${summarySize}px "Noto Serif SC", serif`
+  const summaryLines = wrapText(mCtx, payload.summary, maxW, 4)
+
+  mCtx.font = `400 ${translationSize}px "Noto Serif SC", serif`
+  const translationParagraphs = splitParagraphs(payload.translation).map((line) =>
+    wrapText(mCtx, line, maxW, 99)
+  )
 
   mCtx.font = `400 ${insightSize}px "Noto Serif SC", serif`
-  const insightLines = wrapText(mCtx, payload.insight, maxW, 12)
+  const insightParagraphs = splitParagraphs(payload.insight).map((line) => wrapText(mCtx, line, maxW, 99))
+
+  const measureParagraphBlock = (paragraphs: string[][], lineHeight: number) =>
+    paragraphs.reduce((total, lines, index) => {
+      const linesHeight = lines.length * lineHeight
+      const trailingGap = index < paragraphs.length - 1 ? paragraphGap : 0
+      return total + linesHeight + trailingGap
+    }, 0)
 
   const section1H = dateLabelSize + 12 + sourceSize
-  const section2H = sectionLabelSize + labelGap + contentLines.length * contentLineH
-  const section3H = sectionLabelSize + labelGap + insightLines.length * insightLineH
-  const contentH = section1H + sectionGap + section2H + sectionGap + section3H
+  const section2H = contextLines.length ? contextLines.length * contextLineH : 0
+  const section3H = sectionLabelSize + labelGap + measureParagraphBlock(contentParagraphs, contentLineH)
+  const section4H = sectionLabelSize + labelGap + summaryLines.length * summaryLineH
+  const section5H = sectionLabelSize + labelGap + measureParagraphBlock(translationParagraphs, translationLineH)
+  const section6H = sectionLabelSize + labelGap + measureParagraphBlock(insightParagraphs, insightLineH)
+  const contentH =
+    section1H +
+    sectionGap +
+    (section2H ? section2H + sectionGap : 0) +
+    section3H +
+    sectionGap +
+    section4H +
+    sectionGap +
+    section5H +
+    sectionGap +
+    section6H
 
-  const padding = 120
-  const h = Math.min(1920, contentH + padding * 2 + SHARE_QR_SIZE + 40)
+  const paddingTop = 120
+  const paddingBottom = 140
+  const footerTop = paddingTop + contentH + 96
+  const h = footerTop + SHARE_QR_SIZE + paddingBottom
 
   // Draw pass
   const canvas = document.createElement('canvas')
@@ -124,7 +171,7 @@ const generateDuShareCard = async (run: DailyRunWithPassage, date: string): Prom
   ctx.fillRect(0, 0, w, h)
 
   ctx.textBaseline = 'top'
-  let y = padding
+  let y = paddingTop
 
   // ── 日期 + 来源 ───────────────────────────────────────
   ctx.fillStyle = '#96836e'
@@ -137,6 +184,17 @@ const generateDuShareCard = async (run: DailyRunWithPassage, date: string): Prom
   ctx.fillText(source, margin, y)
   y += sourceSize + sectionGap
 
+  // ── 节选信息 ─────────────────────────────────────────
+  if (contextLines.length) {
+    ctx.fillStyle = '#6d6154'
+    ctx.font = `400 ${contextSize}px "Noto Serif SC", serif`
+    for (const line of contextLines) {
+      ctx.fillText(line, margin, y)
+      y += contextLineH
+    }
+    y += sectionGap
+  }
+
   // ── 原文 ─────────────────────────────────────────────
   ctx.fillStyle = sectionLabelColor
   ctx.font = `400 ${sectionLabelSize}px "Noto Serif SC", serif`
@@ -145,36 +203,69 @@ const generateDuShareCard = async (run: DailyRunWithPassage, date: string): Prom
 
   // Left accent bar
   ctx.fillStyle = 'rgba(139,100,74,0.22)'
-  ctx.fillRect(margin, y, 4, contentLines.length * contentLineH)
+  const contentBlockHeight = measureParagraphBlock(contentParagraphs, contentLineH)
+  ctx.fillRect(margin, y, 4, contentBlockHeight)
 
   ctx.fillStyle = '#1c1714'
   ctx.font = `400 ${contentSize}px "Noto Serif SC", serif`
-  for (const line of contentLines) {
-    ctx.fillText(line, margin + 20, y)
-    y += contentLineH
-  }
-  if (passage.content.length > contentLines.join('').length) {
-    y -= contentLineH
-    ctx.fillText('……', margin + 20, y)
-    y += contentLineH
+  for (let index = 0; index < contentParagraphs.length; index += 1) {
+    for (const line of contentParagraphs[index]) {
+      ctx.fillText(line, margin + 20, y)
+      y += contentLineH
+    }
+    if (index < contentParagraphs.length - 1) y += paragraphGap
   }
   y += sectionGap
 
-  // ── 今日启发 ─────────────────────────────────────────
+  // ── 一句话 ───────────────────────────────────────────
   ctx.fillStyle = sectionLabelColor
   ctx.font = `400 ${sectionLabelSize}px "Noto Serif SC", serif`
-  ctx.fillText('今日启发', margin, y)
+  ctx.fillText('一句话', margin, y)
+  y += sectionLabelSize + labelGap
+
+  ctx.fillStyle = '#2f2924'
+  ctx.font = `500 ${summarySize}px "Noto Serif SC", serif`
+  for (const line of summaryLines) {
+    ctx.fillText(line, margin, y)
+    y += summaryLineH
+  }
+  y += sectionGap
+
+  // ── 慢慢读 ───────────────────────────────────────────
+  ctx.fillStyle = sectionLabelColor
+  ctx.font = `400 ${sectionLabelSize}px "Noto Serif SC", serif`
+  ctx.fillText('慢慢读', margin, y)
+  y += sectionLabelSize + labelGap
+
+  ctx.fillStyle = '#3a3028'
+  ctx.font = `400 ${translationSize}px "Noto Serif SC", serif`
+  for (let index = 0; index < translationParagraphs.length; index += 1) {
+    for (const line of translationParagraphs[index]) {
+      ctx.fillText(line, margin, y)
+      y += translationLineH
+    }
+    if (index < translationParagraphs.length - 1) y += paragraphGap
+  }
+  y += sectionGap
+
+  // ── 启示 ─────────────────────────────────────────────
+  ctx.fillStyle = sectionLabelColor
+  ctx.font = `400 ${sectionLabelSize}px "Noto Serif SC", serif`
+  ctx.fillText('启示', margin, y)
   y += sectionLabelSize + labelGap
 
   ctx.fillStyle = '#3a3028'
   ctx.font = `400 ${insightSize}px "Noto Serif SC", serif`
-  for (const line of insightLines) {
-    ctx.fillText(line, margin, y)
-    y += insightLineH
+  for (let index = 0; index < insightParagraphs.length; index += 1) {
+    for (const line of insightParagraphs[index]) {
+      ctx.fillText(line, margin, y)
+      y += insightLineH
+    }
+    if (index < insightParagraphs.length - 1) y += paragraphGap
   }
 
   // ── Footer ────────────────────────────────────────────
-  await drawShareFooter(ctx, w, h - margin - SHARE_QR_SIZE, '慢读')
+  await drawShareFooter(ctx, w, footerTop, '慢读')
 
   return canvasToBlob(canvas)
 }
@@ -198,7 +289,7 @@ export default function DuDayClient({ run, date, context }: Props) {
 
     setIsGenerating(true)
     try {
-      const blob = await generateDuShareCard(run, date)
+      const blob = await generateDuShareCard(run, date, context)
       setShareImageUrl(URL.createObjectURL(blob))
     } catch (err) {
       console.error(err)
@@ -337,7 +428,7 @@ export default function DuDayClient({ run, date, context }: Props) {
         <div className="du-share-sheet" onClick={closeShare}>
           <div className="du-share-sheet-card" onClick={(e) => e.stopPropagation()}>
             <div className="du-share-sheet-header">
-              <h3 className="du-share-sheet-title">长按图片保存，分享到朋友圈</h3>
+              <h3 className="du-share-sheet-title">慢读长图，长按图片保存</h3>
               <button className="du-share-close" onClick={closeShare} aria-label="关闭">×</button>
             </div>
 
@@ -349,7 +440,7 @@ export default function DuDayClient({ run, date, context }: Props) {
                 <img
                   className="du-share-sheet-image"
                   src={shareImageUrl}
-                  alt="分享图片预览"
+                  alt="慢读分享长图预览"
                 />
               )}
             </div>
