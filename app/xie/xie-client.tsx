@@ -16,6 +16,7 @@ import {
   SHARE_QR_SIZE,
   SHARE_WIDTH,
 } from '@/lib/share-card'
+import { LLM_API_URL } from '@/lib/llm'
 
 type XieOutput = {
   styleUsed: string
@@ -321,7 +322,7 @@ const requestXie = async (
 ) => {
   const userPrompt = buildXieYangmingUserPrompt({ intent, style, author })
 
-  const response = await fetch('/api/llm', {
+  const response = await fetch(LLM_API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
