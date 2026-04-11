@@ -8,7 +8,7 @@ const features = [
     title: '寻章',
     desc: '描述一个场景，或上传一张照片，帮你找到最贴切的那句话',
     ready: true,
-    emphasis: '主产品',
+    emphasis: '见意',
   },
   {
     href: '/gua',
@@ -16,7 +16,7 @@ const features = [
     title: '问心',
     desc: '当你想不明白时，以周易智慧回应此刻的困惑',
     ready: true,
-    emphasis: '特色功能',
+    emphasis: '解惑',
   },
   {
     href: '/xie',
@@ -24,7 +24,7 @@ const features = [
     title: '述怀',
     desc: '借古人的笔意，替你把心里的话写出来',
     ready: true,
-    emphasis: '新功能',
+    emphasis: '达情',
   },
   {
     href: '/du',
@@ -32,7 +32,7 @@ const features = [
     title: '慢读',
     desc: '订阅每日古文慢读邮件，每天一封，慢慢读懂一段经典',
     ready: true,
-    emphasis: '每日订阅',
+    emphasis: '修身',
   },
 ]
 
@@ -47,7 +47,7 @@ export default function Home() {
           <p className={styles.subtitle}>表达 · 照见 · 中文之美</p>
           <h1 className={styles.title}>小庄</h1>
           <p className={styles.description}>
-            当你说不清、想不明、写不出的时候，小庄帮你找到最贴切的那句话。
+            无论是寻章见意、问心解惑，还是述怀达情、慢读修身，小庄都在这里，助你找回中文之美的力量。
           </p>
           <p className={styles.heroQuote}>天地有大美而不言 —— 庄子</p>
         </div>
