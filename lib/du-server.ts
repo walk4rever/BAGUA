@@ -659,6 +659,60 @@ export const sendCronAlertEmail = async (job: string, error: string): Promise<vo
 }
 
 // ---------------------------------------------------------------------------
+// Library — volume index & passage list
+// ---------------------------------------------------------------------------
+export type VolumeInfo = {
+  volume: number
+  theme: string
+  source_book: string
+  count: number
+}
+
+export type ArticleEntry = {
+  source_origin: string
+  base_title: string
+  first_id: number
+  segment_count: number
+}
+
+const parseBaseTitle = (title: string): string => title.replace(/（\d+）$/, '')
+
+export const getLibraryVolumes = async (): Promise<VolumeInfo[]> => {
+  const rows = await supabaseFetch<{ volume: number; theme: string; source_book: string }[]>(
+    'xz_du_passages?select=volume,theme,source_book&enabled=eq.true&volume=not.is.null&order=volume.asc'
+  )
+
+  const map = new Map<number, VolumeInfo>()
+  for (const row of rows) {
+    if (!map.has(row.volume)) {
+      map.set(row.volume, { volume: row.volume, theme: row.theme ?? '', source_book: row.source_book, count: 0 })
+    }
+    map.get(row.volume)!.count++
+  }
+
+  return Array.from(map.values()).sort((a, b) => a.volume - b.volume)
+}
+
+export const getVolumePassages = async (volume: number): Promise<ArticleEntry[]> => {
+  const rows = await supabaseFetch<{ id: number; source_origin: string | null; title: string | null }[]>(
+    `xz_du_passages?select=id,source_origin,title&enabled=eq.true&volume=eq.${volume}&order=id.asc`
+  )
+
+  const map = new Map<string, ArticleEntry>()
+  for (const row of rows) {
+    const base = parseBaseTitle(row.title ?? '')
+    const origin = row.source_origin ?? ''
+    const key = `${origin}||${base}`
+    if (!map.has(key)) {
+      map.set(key, { source_origin: origin, base_title: base, first_id: row.id, segment_count: 0 })
+    }
+    map.get(key)!.segment_count++
+  }
+
+  return Array.from(map.values())
+}
+
+// ---------------------------------------------------------------------------
 // Auth
 // ---------------------------------------------------------------------------
 export const verifyCronSecret = (incoming: string | null): boolean => {

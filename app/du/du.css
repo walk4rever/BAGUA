@@ -558,6 +558,138 @@
   border-color: var(--ink-1);
 }
 
+/* ── 书库 ────────────────────────────────────────── */
+
+.du-library-book-title {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  color: var(--ink-0);
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.du-library-book-total {
+  font-size: 0.82rem;
+  color: var(--ink-2);
+  font-weight: 400;
+}
+
+.du-library-volume-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.du-library-volume-item {
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.du-library-volume-item:last-child {
+  border-bottom: none;
+}
+
+.du-library-volume-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0;
+  text-decoration: none;
+  color: var(--ink-0);
+  transition: color 0.15s;
+}
+
+.du-library-volume-link:hover {
+  color: var(--shanshui-primary);
+}
+
+.du-library-volume-name {
+  font-size: 1rem;
+}
+
+.du-library-volume-count {
+  font-size: 0.82rem;
+  color: var(--ink-2);
+}
+
+.du-library-article-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.du-library-origin-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.du-library-origin-label {
+  font-size: 0.82rem;
+  color: var(--ink-2);
+  letter-spacing: 0.06rem;
+}
+
+.du-library-article-sublist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.du-library-article-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.du-library-article-item:last-child {
+  border-bottom: none;
+}
+
+.du-library-article-link {
+  font-size: 1rem;
+  color: var(--ink-0);
+  text-decoration: none;
+  line-height: 1.6;
+}
+
+.du-library-article-link:hover {
+  color: var(--shanshui-primary);
+}
+
+.du-library-segment-hint {
+  font-size: 0.78rem;
+  color: var(--ink-3);
+}
+
+.du-library-entry {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  text-decoration: none;
+  color: var(--ink-0);
+  font-size: 1rem;
+  transition: color 0.15s;
+}
+
+.du-library-entry:hover {
+  color: var(--shanshui-primary);
+}
+
+.du-library-entry-sub {
+  font-size: 0.86rem;
+  color: var(--ink-2);
+}
+
 /* 背景提示 */
 .du-day-context {
   font-size: 0.82rem;
