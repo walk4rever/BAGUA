@@ -847,6 +847,54 @@
   font-weight: 400;
 }
 
+.du-about-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.du-about-intro,
+.du-about-why {
+  color: var(--ink-1);
+  line-height: 1.8;
+  margin: 0;
+}
+
+.du-about-why {
+  color: var(--ink-2);
+  font-style: italic;
+  border-left: 3px solid var(--shanshui-primary);
+  padding-left: 0.9rem;
+}
+
+.du-about-criteria {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: var(--paper-hero);
+  border-radius: 6px;
+  padding: 0.9rem 1.1rem;
+}
+
+.du-about-criterion {
+  display: flex;
+  gap: 1rem;
+  align-items: baseline;
+}
+
+.du-about-label {
+  font-size: 0.78rem;
+  color: var(--ink-2);
+  white-space: nowrap;
+  min-width: 4.5rem;
+}
+
+.du-about-value {
+  font-size: 0.9rem;
+  color: var(--ink-1);
+  line-height: 1.6;
+}
+
 .du-library-volume-list {
   list-style: none;
   margin: 0;

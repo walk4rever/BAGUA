@@ -119,6 +119,31 @@ export default function DuClient({ recentRuns, pagination, volumes }: Props) {
         {error ? <p className="du-error">{error}</p> : null}
       </section>
 
+      <section className="panel du-panel du-about-panel">
+        <h2>关于这本书</h2>
+        <p className="du-about-intro">
+          《经史百家杂钞》是曾国藩历时数年亲手编选的古文读本，从经、史、子、集四部广泛选材，汇集百家，取精去芜。
+          他在军务繁忙之际仍坚持选编，正因相信：读古文是一种修身的功夫，而非单纯积累知识。
+        </p>
+        <div className="du-about-criteria">
+          <div className="du-about-criterion">
+            <span className="du-about-label">选文标准</span>
+            <span className="du-about-value"><strong>义理</strong>（思想正）· <strong>考据</strong>（事实准）· <strong>词章</strong>（文字美）</span>
+          </div>
+          <div className="du-about-criterion">
+            <span className="du-about-label">编纂总纲</span>
+            <span className="du-about-value"><strong>文以载道、经世致用</strong> — 古文不是摆设，是用来解决真实问题的</span>
+          </div>
+          <div className="du-about-criterion">
+            <span className="du-about-label">十大文体</span>
+            <span className="du-about-value">论著 · 序跋 · 诏令 · 奏议 · 书牍 · 哀祭 · 赠序 · 传志 · 记体 · 辞赋</span>
+          </div>
+        </div>
+        <p className="du-about-why">
+          如果你想读古文但不知从哪里下手，这本书是一个诚实的答案——这是一个真正用古文做事的人，替你筛过的书单。
+        </p>
+      </section>
+
       {volumes.length > 0 && (
         <section className="panel du-panel">
           <h2 className="du-admin-heading">
