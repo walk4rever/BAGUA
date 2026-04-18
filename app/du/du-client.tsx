@@ -135,7 +135,7 @@ export default function DuClient({ recentRuns, pagination, volumes }: Props) {
             <span className="du-about-value"><strong>文以载道、经世致用</strong> — 古文不是摆设，是用来解决真实问题的</span>
           </div>
           <div className="du-about-criterion">
-            <span className="du-about-label">十大文体</span>
+            <span className="du-about-label">十一文体</span>
             <span className="du-about-value">论著 · 序跋 · 诏令 · 奏议 · 书牍 · 哀祭 · 传志 · 叙记 · 词赋 · 典志 · 杂记</span>
           </div>
         </div>
