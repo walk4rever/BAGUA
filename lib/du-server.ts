@@ -722,16 +722,35 @@ export type ArticleEntryAdmin = {
 const parseBaseTitle = (title: string): string => title.replace(/（\d+）$/, '')
 
 export const getLibraryVolumes = async (): Promise<VolumeInfo[]> => {
-  const rows = await supabaseFetch<{ volume: number; theme: string; source_book: string }[]>(
-    'xz_du_passages?select=volume,theme,source_book&enabled=eq.true&volume=not.is.null&order=volume.asc&limit=9999'
-  )
+  const supabaseUrl = required(env.supabaseUrl, 'SUPABASE_URL')
+  const serviceRoleKey = required(env.supabaseServiceRoleKey, 'SUPABASE_SERVICE_ROLE_KEY')
 
+  const PAGE = 1000
   const map = new Map<number, VolumeInfo>()
-  for (const row of rows) {
-    if (!map.has(row.volume)) {
-      map.set(row.volume, { volume: row.volume, theme: row.theme ?? '', source_book: row.source_book, count: 0 })
+  let offset = 0
+
+  while (true) {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/xz_du_passages?select=volume,theme,source_book&enabled=eq.true&volume=not.is.null&order=volume.asc`,
+      {
+        headers: {
+          apikey: serviceRoleKey,
+          Authorization: `Bearer ${serviceRoleKey}`,
+          Range: `${offset}-${offset + PAGE - 1}`,
+          'Range-Unit': 'items',
+        },
+      }
+    )
+    if (!response.ok) throw new Error(`Supabase ${response.status}`)
+    const rows = await response.json() as { volume: number; theme: string; source_book: string }[]
+    for (const row of rows) {
+      if (!map.has(row.volume)) {
+        map.set(row.volume, { volume: row.volume, theme: row.theme ?? '', source_book: row.source_book, count: 0 })
+      }
+      map.get(row.volume)!.count++
     }
-    map.get(row.volume)!.count++
+    if (rows.length < PAGE) break
+    offset += PAGE
   }
 
   return Array.from(map.values()).sort((a, b) => a.volume - b.volume)
