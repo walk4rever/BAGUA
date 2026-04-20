@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import type { DailyRunWithPassage, PassageContext } from '@/lib/du-server'
+import type { Author, Article, DailyRunWithPassage, PassageContext } from '@/lib/du-server'
 import {
   canvasToBlob,
   drawShareFooter,
@@ -12,10 +12,49 @@ import {
   SHARE_WIDTH,
 } from '@/lib/share-card'
 
+const VOLUME_CHINESE: Record<number, string> = {
+  1: '一', 2: '二', 3: '三', 4: '四', 5: '五',
+  6: '六', 7: '七', 8: '八', 9: '九', 10: '十',
+  11: '十一', 12: '十二', 13: '十三', 14: '十四', 15: '十五',
+  16: '十六', 17: '十七', 18: '十八', 19: '十九', 20: '二十',
+  21: '二十一', 22: '二十二', 23: '二十三', 24: '二十四', 25: '二十五', 26: '二十六',
+}
+
 interface Props {
   run: DailyRunWithPassage
   date: string
   context?: PassageContext | null
+  author?: Author | null
+  article?: Article | null
+}
+
+function buildAttribution(
+  passage: DailyRunWithPassage['passage'],
+  context: PassageContext | null | undefined
+): string {
+  const parts: string[] = []
+
+  if (passage.source_book) {
+    let bookRef = `《${passage.source_book}》`
+    if (passage.volume) {
+      const volCN = VOLUME_CHINESE[passage.volume] ?? String(passage.volume)
+      bookRef += `第${volCN}卷`
+      if (passage.theme) bookRef += passage.theme
+    }
+    parts.push(`本段节选自${bookRef}`)
+  }
+
+  const authorPart = passage.source_origin ?? ''
+  const baseTitle = context?.baseTitle ?? passage.title
+  const titlePart = baseTitle ? `《${baseTitle}》` : ''
+  const authorTitle = [authorPart, titlePart].filter(Boolean).join('·')
+  if (authorTitle) parts.push(authorTitle)
+
+  let line = parts.join('，')
+  if (context && context.totalSegments > 1) {
+    line += `｜第 ${context.currentIndex} 段，共 ${context.totalSegments} 段`
+  }
+  return line
 }
 
 // ---------------------------------------------------------------------------
@@ -306,7 +345,7 @@ const generateDuShareCard = async (
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export default function DuDayClient({ run, date, context }: Props) {
+export default function DuDayClient({ run, date, context, author, article }: Props) {
   const { passage } = run
   const payload = passage.payload
   const source = [passage.source_origin, passage.title].filter(Boolean).join(' · ')
@@ -376,9 +415,25 @@ export default function DuDayClient({ run, date, context }: Props) {
       </header>
 
       <section className="panel du-panel du-day-panel">
-        {/* 背景提示 */}
-        {context && (
-          <p className="du-day-context">{context.contextLine}</p>
+        {/* 出处 */}
+        <p className="du-day-attribution">
+          {buildAttribution(passage, context)}
+        </p>
+
+        {/* 作者简介 */}
+        {author && (
+          <div className="du-day-section">
+            <span className="du-day-label">{passage.source_origin}</span>
+            <p className="du-day-content">{author.description}</p>
+          </div>
+        )}
+
+        {/* 文章背景 */}
+        {article && (
+          <div className="du-day-section">
+            <span className="du-day-label">{article.base_title}</span>
+            <p className="du-day-content">{article.background}</p>
+          </div>
         )}
 
         {/* 原文 */}

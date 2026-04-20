@@ -1010,12 +1010,46 @@
   color: var(--ink-2);
 }
 
-/* 背景提示 */
+/* 背景提示（兼容旧用途） */
 .du-day-context {
   font-size: 0.82rem;
   color: var(--ink-2);
   margin: 0 0 1.5rem;
   letter-spacing: 0.03em;
+}
+
+/* 出处行 */
+.du-day-attribution {
+  font-size: 0.82rem;
+  color: var(--ink-2);
+  margin: 0 0 1.25rem;
+  letter-spacing: 0.03em;
+  line-height: 1.7;
+}
+
+/* 作者简介 / 文章背景 */
+.du-day-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  padding: 0.65rem 1rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 0 8px 8px 0;
+  border-left: 2px solid rgba(95, 124, 119, 0.35);
+}
+
+.du-day-meta-label {
+  font-size: 0.78rem;
+  color: var(--ink-2);
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+.du-day-meta-text {
+  font-size: 0.95rem;
+  color: var(--ink-1);
+  line-height: 1.8;
 }
 
 /* 分段导航 */

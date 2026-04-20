@@ -1,4 +1,5 @@
 import {
+  enrichPassageMeta,
   generateDuPayload,
   getPassageById,
   savePassagePayload,
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
 
   const payload = await generateDuPayload(passage)
   await savePassagePayload(passageId, payload)
+  await enrichPassageMeta(passage)
 
   return Response.json({ message: 'Regenerated', passageId, title: passage.title })
 }

@@ -1,4 +1,10 @@
-import { buildDuUserPrompt, DU_SYSTEM_PROMPT, type DuOutput } from '@/data/du-prompt'
+import {
+  buildDuUserPrompt,
+  DU_SYSTEM_PROMPT,
+  AUTHOR_DESCRIPTION_PROMPT,
+  ARTICLE_BACKGROUND_PROMPT,
+  type DuOutput,
+} from '@/data/du-prompt'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,6 +51,19 @@ export type DailyRun = {
 
 export type DailyRunWithPassage = DailyRun & {
   passage: Passage
+}
+
+export type Author = {
+  source_origin: string
+  description: string
+  updated_at: string
+}
+
+export type Article = {
+  source_origin: string
+  base_title: string
+  background: string
+  updated_at: string
 }
 
 export type PassageContext = {
@@ -241,7 +260,7 @@ export const pickTodayPassage = async (): Promise<Passage> => {
 
 export const getPassageById = async (id: number): Promise<Passage | null> => {
   const rows = await supabaseFetch<Passage[]>(
-    `xz_du_passages?select=id,source_book,source_origin,title,content,difficulty,theme,payload&id=eq.${id}&limit=1`
+    `xz_du_passages?select=id,source_book,source_origin,title,content,difficulty,theme,volume,payload&id=eq.${id}&limit=1`
   )
   return rows[0] ?? null
 }
@@ -262,7 +281,7 @@ export const updatePassage = async (id: number, fields: PassageUpdate): Promise<
   })
 }
 
-function parseSegment(title: string): { base: string; segment: number | null } {
+export function parseSegment(title: string): { base: string; segment: number | null } {
   const m = title.match(/^(.+?)（(\d+)）$/)
   if (m) return { base: m[1], segment: parseInt(m[2], 10) }
   return { base: title, segment: null }
@@ -316,7 +335,7 @@ export const getRunByDate = async (date: string): Promise<DailyRunWithPassage | 
       xz_du_passages: Passage
     }>
   >(
-    `xz_du_daily_runs?select=id,run_date,passage_id,sent_count,xz_du_passages(id,source_book,source_origin,title,content,difficulty,theme,payload)&run_date=eq.${date}&limit=1`
+    `xz_du_daily_runs?select=id,run_date,passage_id,sent_count,xz_du_passages(id,source_book,source_origin,title,content,difficulty,theme,volume,payload)&run_date=eq.${date}&limit=1`
   )
 
   if (!runs[0]) return null
@@ -341,7 +360,7 @@ export const getRecentRuns = async (limit = 7): Promise<DailyRunWithPassage[]> =
       xz_du_passages: Passage
     }>
   >(
-    `xz_du_daily_runs?select=id,run_date,passage_id,sent_count,xz_du_passages(id,source_book,source_origin,title,content,difficulty,theme,payload)&order=run_date.desc&limit=${limit}`
+    `xz_du_daily_runs?select=id,run_date,passage_id,sent_count,xz_du_passages(id,source_book,source_origin,title,content,difficulty,theme,volume,payload)&order=run_date.desc&limit=${limit}`
   )
 
   return runs.map((row) => ({
@@ -362,7 +381,7 @@ export const getRecentRunsPaged = async (page: number, limit: number): Promise<{
     sent_count: number
     xz_du_passages: Passage
   }>(
-    `xz_du_daily_runs?select=id,run_date,passage_id,sent_count,xz_du_passages(id,source_book,source_origin,title,content,difficulty,theme,payload)&order=run_date.desc&limit=${limit}&offset=${offset}`
+    `xz_du_daily_runs?select=id,run_date,passage_id,sent_count,xz_du_passages(id,source_book,source_origin,title,content,difficulty,theme,volume,payload)&order=run_date.desc&limit=${limit}&offset=${offset}`
   )
 
   return {
@@ -534,6 +553,114 @@ export const generateDuPayload = async (passage: Passage): Promise<DuOutput> => 
   }
 
   throw lastError ?? new Error('LLM generation failed')
+}
+
+// ---------------------------------------------------------------------------
+// Authors & Articles
+// ---------------------------------------------------------------------------
+export const getAuthor = async (sourceOrigin: string): Promise<Author | null> => {
+  const rows = await supabaseFetch<Author[]>(
+    `xz_du_authors?source_origin=eq.${encodeURIComponent(sourceOrigin)}&limit=1`
+  )
+  return rows[0] ?? null
+}
+
+export const upsertAuthor = async (sourceOrigin: string, description: string): Promise<void> => {
+  await supabaseFetch('xz_du_authors', {
+    method: 'POST',
+    headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ source_origin: sourceOrigin, description, updated_at: new Date().toISOString() }),
+  })
+}
+
+export const getArticle = async (sourceOrigin: string, baseTitle: string): Promise<Article | null> => {
+  const rows = await supabaseFetch<Article[]>(
+    `xz_du_articles?source_origin=eq.${encodeURIComponent(sourceOrigin)}&base_title=eq.${encodeURIComponent(baseTitle)}&limit=1`
+  )
+  return rows[0] ?? null
+}
+
+export const upsertArticle = async (sourceOrigin: string, baseTitle: string, background: string): Promise<void> => {
+  await supabaseFetch('xz_du_articles', {
+    method: 'POST',
+    headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ source_origin: sourceOrigin, base_title: baseTitle, background, updated_at: new Date().toISOString() }),
+  })
+}
+
+const generateTextWithLLM = async (systemPrompt: string, userContent: string): Promise<string> => {
+  const url = `${env.appBaseUrl}/api/llm`
+  const body = JSON.stringify({
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userContent },
+    ],
+    temperature: 0.4,
+    max_tokens: 200,
+  })
+
+  let lastError: Error | null = null
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const response = await timeoutFetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      }, 20000)
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '')
+        throw new Error(`LLM request failed: ${response.status} ${text}`)
+      }
+
+      const reader = response.body?.getReader()
+      if (!reader) throw new Error('LLM stream unavailable')
+      const decoder = new TextDecoder()
+      let content = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        content += decoder.decode(value, { stream: true })
+      }
+      return content.trim()
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Unknown LLM error')
+      if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 900))
+    }
+  }
+
+  throw lastError ?? new Error('LLM generation failed')
+}
+
+export const enrichPassageMeta = async (passage: Passage): Promise<void> => {
+  const sourceOrigin = passage.source_origin
+  if (!sourceOrigin) return
+
+  const { base: baseTitle } = parseSegment(passage.title ?? '')
+
+  const [existingAuthor, existingArticle] = await Promise.all([
+    getAuthor(sourceOrigin),
+    baseTitle ? getArticle(sourceOrigin, baseTitle) : Promise.resolve(null),
+  ])
+
+  const tasks: Promise<void>[] = []
+
+  if (!existingAuthor) {
+    tasks.push(
+      generateTextWithLLM(AUTHOR_DESCRIPTION_PROMPT, sourceOrigin)
+        .then((description) => upsertAuthor(sourceOrigin, description))
+    )
+  }
+
+  if (!existingArticle && baseTitle) {
+    const userContent = `作者：${sourceOrigin}\n文章：${baseTitle}`
+    tasks.push(
+      generateTextWithLLM(ARTICLE_BACKGROUND_PROMPT, userContent)
+        .then((background) => upsertArticle(sourceOrigin, baseTitle, background))
+    )
+  }
+
+  await Promise.all(tasks)
 }
 
 // ---------------------------------------------------------------------------

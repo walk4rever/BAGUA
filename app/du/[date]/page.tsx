@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getRunByDate, getPassageContext } from '@/lib/du-server'
+import { getRunByDate, getPassageContext, getAuthor, getArticle, parseSegment } from '@/lib/du-server'
 import DuDayClient from './du-day-client'
 
 interface Props {
@@ -40,9 +40,16 @@ export default async function DuDayPage({ params }: Props) {
   const run = await getRunByDate(date).catch(() => null)
   if (!run) notFound()
 
-  const context = run.passage.source_origin && run.passage.title
-    ? await getPassageContext(run.passage.id, run.passage.source_origin, run.passage.title).catch(() => null)
-    : null
+  const { source_origin, title } = run.passage
+  const baseTitle = title ? parseSegment(title).base : null
 
-  return <DuDayClient run={run} date={date} context={context} />
+  const [context, author, article] = await Promise.all([
+    source_origin && title
+      ? getPassageContext(run.passage.id, source_origin, title).catch(() => null)
+      : Promise.resolve(null),
+    source_origin ? getAuthor(source_origin).catch(() => null) : Promise.resolve(null),
+    source_origin && baseTitle ? getArticle(source_origin, baseTitle).catch(() => null) : Promise.resolve(null),
+  ])
+
+  return <DuDayClient run={run} date={date} context={context} author={author} article={article} />
 }

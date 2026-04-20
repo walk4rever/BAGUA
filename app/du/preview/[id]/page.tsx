@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getPassageById, getPassageContext } from '@/lib/du-server'
+import { getPassageById, getPassageContext, getAuthor, getArticle, parseSegment } from '@/lib/du-server'
 import DuDayClient from '../../[date]/du-day-client'
 
 interface Props {
@@ -14,9 +14,16 @@ export default async function DuPreviewPage({ params }: Props) {
   const passage = await getPassageById(passageId).catch(() => null)
   if (!passage || !passage.payload) notFound()
 
-  const context = passage.source_origin && passage.title
-    ? await getPassageContext(passageId, passage.source_origin, passage.title).catch(() => null)
-    : null
+  const { source_origin, title } = passage
+  const baseTitle = title ? parseSegment(title).base : null
+
+  const [context, author, article] = await Promise.all([
+    source_origin && title
+      ? getPassageContext(passageId, source_origin, title).catch(() => null)
+      : Promise.resolve(null),
+    source_origin ? getAuthor(source_origin).catch(() => null) : Promise.resolve(null),
+    source_origin && baseTitle ? getArticle(source_origin, baseTitle).catch(() => null) : Promise.resolve(null),
+  ])
 
   const run = {
     id: 0,
@@ -26,5 +33,5 @@ export default async function DuPreviewPage({ params }: Props) {
     passage,
   }
 
-  return <DuDayClient run={run} date={context?.contextLine ?? '预览'} context={context} />
+  return <DuDayClient run={run} date={context?.contextLine ?? '预览'} context={context} author={author} article={article} />
 }
