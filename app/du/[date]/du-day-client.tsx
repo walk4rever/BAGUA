@@ -105,7 +105,9 @@ const renderDuShareCard = async (
   run: DailyRunWithPassage,
   date: string,
   context: PassageContext | null | undefined,
-  shouldDraw: boolean
+  shouldDraw: boolean,
+  author?: Author | null,
+  article?: Article | null
 ) => {
   const { passage } = run
   const payload = passage.payload!
@@ -123,6 +125,8 @@ const renderDuShareCard = async (
   const sectionLabelColor = '#96836e'
   const contextSize = 28
   const contextLineH = contextSize + 22
+  const bioSize = 28
+  const bioLineH = bioSize + 20
   const contentSize = 38
   const contentLineH = contentSize + 28
   const summarySize = 34
@@ -140,6 +144,10 @@ const renderDuShareCard = async (
 
   ctx.font = `400 ${contextSize}px "Noto Serif SC", serif`
   const contextLines = contextLine ? wrapText(ctx, contextLine, maxW, 3) : []
+
+  ctx.font = `400 ${bioSize}px "Noto Serif SC", serif`
+  const authorLines = author?.description ? wrapText(ctx, author.description, maxW, 99) : []
+  const articleLines = article?.background ? wrapText(ctx, article.background, maxW, 99) : []
 
   ctx.font = `500 ${summarySize}px "Noto Serif SC", serif`
   const summaryLines = wrapText(ctx, payload.summary, maxW, 4)
@@ -173,23 +181,31 @@ const renderDuShareCard = async (
     if (contextLines.length) {
       sy += contextLines.length * contextLineH + sectionGap
     }
-    // section3: 原文
+    // section3: 作者简介
+    if (authorLines.length) {
+      sy += sectionLabelSize + labelGap + authorLines.length * bioLineH + sectionGap
+    }
+    // section4: 文章背景
+    if (articleLines.length) {
+      sy += sectionLabelSize + labelGap + articleLines.length * bioLineH + sectionGap
+    }
+    // section5: 原文
     sy += sectionLabelSize + labelGap
     for (let i = 0; i < contentParagraphs.length; i += 1) {
       sy += contentParagraphs[i].length * contentLineH
       if (i < contentParagraphs.length - 1) sy += paragraphGap
     }
     sy += sectionGap
-    // section4: 一句话
+    // section6: 一句话
     sy += sectionLabelSize + labelGap + summaryLines.length * summaryLineH + sectionGap
-    // section5: 慢慢读
+    // section7: 慢慢读
     sy += sectionLabelSize + labelGap
     for (let i = 0; i < translationParagraphs.length; i += 1) {
       sy += translationParagraphs[i].length * translationLineH
       if (i < translationParagraphs.length - 1) sy += paragraphGap
     }
     sy += sectionGap
-    // section6: 启示
+    // section8: 启示
     sy += sectionLabelSize + labelGap
     for (let i = 0; i < insightParagraphs.length; i += 1) {
       sy += insightParagraphs[i].length * insightLineH
@@ -236,6 +252,38 @@ const renderDuShareCard = async (
     for (const line of contextLines) {
       if (shouldDraw) ctx.fillText(line, margin, y)
       y += contextLineH
+    }
+    y += sectionGap
+  }
+
+  // ── 作者简介 ─────────────────────────────────────────
+  if (authorLines.length) {
+    ctx.fillStyle = sectionLabelColor
+    ctx.font = `400 ${sectionLabelSize}px "Noto Serif SC", serif`
+    if (shouldDraw) ctx.fillText(passage.source_origin ?? '作者', margin, y)
+    y += sectionLabelSize + labelGap
+
+    ctx.fillStyle = '#3a3028'
+    ctx.font = `400 ${bioSize}px "Noto Serif SC", serif`
+    for (const line of authorLines) {
+      if (shouldDraw) ctx.fillText(line, margin, y)
+      y += bioLineH
+    }
+    y += sectionGap
+  }
+
+  // ── 文章背景 ─────────────────────────────────────────
+  if (articleLines.length) {
+    ctx.fillStyle = sectionLabelColor
+    ctx.font = `400 ${sectionLabelSize}px "Noto Serif SC", serif`
+    if (shouldDraw) ctx.fillText(article?.base_title ?? '背景', margin, y)
+    y += sectionLabelSize + labelGap
+
+    ctx.fillStyle = '#3a3028'
+    ctx.font = `400 ${bioSize}px "Noto Serif SC", serif`
+    for (const line of articleLines) {
+      if (shouldDraw) ctx.fillText(line, margin, y)
+      y += bioLineH
     }
     y += sectionGap
   }
@@ -322,7 +370,9 @@ const renderDuShareCard = async (
 const generateDuShareCard = async (
   run: DailyRunWithPassage,
   date: string,
-  context?: PassageContext | null
+  context?: PassageContext | null,
+  author?: Author | null,
+  article?: Article | null
 ): Promise<Blob> => {
   const measureCanvas = document.createElement('canvas')
   measureCanvas.width = SHARE_WIDTH
@@ -330,7 +380,7 @@ const generateDuShareCard = async (
   const measureCtx = measureCanvas.getContext('2d')
   if (!measureCtx) throw new Error('图片生成失败')
 
-  const finalHeight = await renderDuShareCard(measureCtx, run, date, context, false)
+  const finalHeight = await renderDuShareCard(measureCtx, run, date, context, false, author, article)
 
   const canvas = document.createElement('canvas')
   canvas.width = SHARE_WIDTH
@@ -338,7 +388,7 @@ const generateDuShareCard = async (
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('图片生成失败')
 
-  await renderDuShareCard(ctx, run, date, context, true)
+  await renderDuShareCard(ctx, run, date, context, true, author, article)
   return canvasToBlob(canvas, 0.93)
 }
 
@@ -363,7 +413,7 @@ export default function DuDayClient({ run, date, context, author, article }: Pro
 
     setIsGenerating(true)
     try {
-      const blob = await generateDuShareCard(run, date, context)
+      const blob = await generateDuShareCard(run, date, context, author, article)
       if (shareImageUrl) URL.revokeObjectURL(shareImageUrl)
       setShareBlob(blob)
       setShareImageUrl(URL.createObjectURL(blob))
@@ -377,7 +427,7 @@ export default function DuDayClient({ run, date, context, author, article }: Pro
   const closeShare = () => setIsShareOpen(false)
 
   const handleSaveShareImage = async () => {
-    const blob = shareBlob ?? (payload ? await generateDuShareCard(run, date, context) : null)
+    const blob = shareBlob ?? (payload ? await generateDuShareCard(run, date, context, author, article) : null)
     if (!blob) return
     if (!shareBlob) setShareBlob(blob)
     await shareBlobFile(blob, `xiaozhuang-du-${date}.jpg`, '慢读分享图', `小庄 · 慢读 · ${date}`)

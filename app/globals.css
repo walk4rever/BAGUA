@@ -67,7 +67,7 @@ a {
   flex-direction: column;
   gap: 2.5rem;
   padding: 2.5rem clamp(1.5rem, 4vw, 4rem) 4rem;
-  max-width: 720px;
+  max-width: 800px;
   margin: 0 auto;
   color: var(--ink-0);
 }
