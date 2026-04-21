@@ -666,7 +666,14 @@ export const enrichPassageMeta = async (passage: Passage): Promise<void> => {
 // ---------------------------------------------------------------------------
 // Email
 // ---------------------------------------------------------------------------
-const buildMailHtml = (runDate: string, passage: Passage, payload: DuOutput, contextLine?: string): string => {
+const buildMailHtml = (
+  runDate: string,
+  passage: Passage,
+  payload: DuOutput,
+  contextLine?: string,
+  author?: Author | null,
+  article?: Article | null
+): string => {
   const readingUrl = `${env.appBaseUrl}/du/${runDate}`
   const unsubUrl = `${env.appBaseUrl}/api/du/unsubscribe?email={{email}}`
   const keywordHtml = payload.keywords
@@ -674,12 +681,22 @@ const buildMailHtml = (runDate: string, passage: Passage, payload: DuOutput, con
     .join('')
   const source = [passage.source_origin, passage.title].filter(Boolean).join(' · ')
 
+  const authorHtml = author?.description ? `
+  <h3>${passage.source_origin ?? '作者'}</h3>
+  <p style="color:#4a3f36;">${author.description}</p>
+` : ''
+
+  const articleHtml = article?.background ? `
+  <h3>${article.base_title}</h3>
+  <p style="color:#4a3f36;">${article.background}</p>
+` : ''
+
   return `
 <div style="font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Noto Serif SC',serif;max-width:680px;margin:0 auto;color:#2b2320;line-height:1.9;">
   <p style="color:#6b5f54;margin-bottom:4px;">${runDate} · ${passage.source_book}</p>
   <h2 style="margin:0 0 8px;">${source}</h2>
   ${contextLine ? `<p style="color:#8a7d71;font-size:0.88rem;margin:0 0 20px;">${contextLine}</p>` : ''}
-
+  ${authorHtml}${articleHtml}
   <h3>原文</h3>
   <p style="background:#faf7f2;padding:16px;border-radius:8px;border-left:3px solid #c8b49a;">
     ${passage.content.replace(/\n/g, '<br/>')}
@@ -725,16 +742,23 @@ export const sendDuEmails = async (
   const source = [passage.source_origin, passage.title].filter(Boolean).join(' · ')
   const subject = `今日慢读｜${source}`
 
-  const ctx = passage.source_origin && passage.title
-    ? await getPassageContext(passage.id, passage.source_origin, passage.title).catch(() => null)
-    : null
+  const { base: baseTitle } = parseSegment(passage.title ?? '')
+  const [ctx, author, article] = await Promise.all([
+    passage.source_origin && passage.title
+      ? getPassageContext(passage.id, passage.source_origin, passage.title).catch(() => null)
+      : Promise.resolve(null),
+    passage.source_origin ? getAuthor(passage.source_origin).catch(() => null) : Promise.resolve(null),
+    passage.source_origin && baseTitle
+      ? getArticle(passage.source_origin, baseTitle).catch(() => null)
+      : Promise.resolve(null),
+  ])
 
   // Resend batch API — 单次请求发所有订阅者
   const emails = subscribers.map((s) => ({
     from,
     to: [s.email],
     subject,
-    html: buildMailHtml(runDate, passage, payload, ctx?.contextLine).replace(
+    html: buildMailHtml(runDate, passage, payload, ctx?.contextLine, author, article).replace(
       /\{\{email\}\}/g,
       encodeURIComponent(s.email)
     ),
@@ -767,9 +791,16 @@ export const sendTestEmail = async (
   const adminEmail = required(env.duAdminEmail, 'DU_ADMIN_EMAIL')
   const source = [passage.source_origin, passage.title].filter(Boolean).join(' · ')
 
-  const ctx = passage.source_origin && passage.title
-    ? await getPassageContext(passage.id, passage.source_origin, passage.title).catch(() => null)
-    : null
+  const { base: baseTitle } = parseSegment(passage.title ?? '')
+  const [ctx, author, article] = await Promise.all([
+    passage.source_origin && passage.title
+      ? getPassageContext(passage.id, passage.source_origin, passage.title).catch(() => null)
+      : Promise.resolve(null),
+    passage.source_origin ? getAuthor(passage.source_origin).catch(() => null) : Promise.resolve(null),
+    passage.source_origin && baseTitle
+      ? getArticle(passage.source_origin, baseTitle).catch(() => null)
+      : Promise.resolve(null),
+  ])
 
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -781,7 +812,7 @@ export const sendTestEmail = async (
       from,
       to: [adminEmail],
       subject: `[测试] 今日慢读｜${source}`,
-      html: buildMailHtml(runDate, passage, payload, ctx?.contextLine).replace(
+      html: buildMailHtml(runDate, passage, payload, ctx?.contextLine, author, article).replace(
         /\{\{email\}\}/g,
         encodeURIComponent(adminEmail)
       ),
