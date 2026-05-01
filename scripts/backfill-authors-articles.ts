@@ -68,7 +68,7 @@ const callAI = async (systemPrompt: string, userContent: string): Promise<string
             { role: 'user', content: userContent },
           ],
           temperature: 0.4,
-          max_tokens: 200,
+          max_tokens: 400,
           stream: false,
         }),
         signal: AbortSignal.timeout(30000),
@@ -86,11 +86,28 @@ const callAI = async (systemPrompt: string, userContent: string): Promise<string
 }
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+const fetchAllPassages = async (): Promise<Array<{ source_origin: string | null; title: string | null }>> => {
+  const pageSize = 1000
+  const all: Array<{ source_origin: string | null; title: string | null }> = []
+  let from = 0
+  while (true) {
+    const page = await supaFetch<Array<{ source_origin: string | null; title: string | null }>>(
+      `xz_du_passages?select=source_origin,title&enabled=eq.true&order=id.asc`,
+      { headers: { Range: `${from}-${from + pageSize - 1}`, 'Range-Unit': 'items' } }
+    )
+    all.push(...page)
+    if (page.length < pageSize) break
+    from += pageSize
+  }
+  return all
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
-const passages = await supaFetch<Array<{ source_origin: string | null; title: string | null }>>(
-  'xz_du_passages?select=source_origin,title&enabled=eq.true&order=id.asc&limit=9999'
-)
+const passages = await fetchAllPassages()
 
 // Collect unique source_origins and (source_origin, base_title) pairs
 const uniqueAuthors = new Set<string>()
@@ -110,16 +127,16 @@ for (const p of passages) {
   }
 }
 
-// Fetch existing records to skip
-const existingAuthors = await supaFetch<Array<{ source_origin: string }>>(
-  'xz_du_authors?select=source_origin&limit=9999'
+// Fetch existing records — skip only those with non-empty content
+const existingAuthors = await supaFetch<Array<{ source_origin: string; description: string }>>(
+  'xz_du_authors?select=source_origin,description&limit=9999'
 )
-const existingArticles = await supaFetch<Array<{ source_origin: string; base_title: string }>>(
-  'xz_du_articles?select=source_origin,base_title&limit=9999'
+const existingArticles = await supaFetch<Array<{ source_origin: string; base_title: string; background: string }>>(
+  'xz_du_articles?select=source_origin,base_title,background&limit=9999'
 )
 
-const existingAuthorSet = new Set(existingAuthors.map((a) => a.source_origin))
-const existingArticleSet = new Set(existingArticles.map((a) => `${a.source_origin}\x00${a.base_title}`))
+const existingAuthorSet = new Set(existingAuthors.filter((a) => (a.description?.trim().length ?? 0) >= 40).map((a) => a.source_origin))
+const existingArticleSet = new Set(existingArticles.filter((a) => (a.background?.trim().length ?? 0) >= 40).map((a) => `${a.source_origin}\x00${a.base_title}`))
 
 const pendingAuthors = [...uniqueAuthors].filter((o) => !existingAuthorSet.has(o))
 const pendingArticles = articlePairs.filter((a) => !existingArticleSet.has(`${a.sourceOrigin}\x00${a.baseTitle}`))
@@ -130,14 +147,26 @@ if (isDryRun) { console.log('Dry run — exiting.'); process.exit(0) }
 
 let ok = 0, fail = 0
 
+const existingAuthorNames = new Set(existingAuthors.map((a) => a.source_origin))
+
 for (const sourceOrigin of pendingAuthors) {
   try {
     const description = await callAI(AUTHOR_DESCRIPTION_PROMPT, sourceOrigin)
-    await supaFetch('xz_du_authors', {
-      method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify({ source_origin: sourceOrigin, description, updated_at: new Date().toISOString() }),
-    })
+    if (!description) throw new Error('AI returned empty description')
+    const isExisting = existingAuthorNames.has(sourceOrigin)
+    if (isExisting) {
+      await supaFetch(`xz_du_authors?source_origin=eq.${encodeURIComponent(sourceOrigin)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ description, updated_at: new Date().toISOString() }),
+      })
+    } else {
+      await supaFetch('xz_du_authors', {
+        method: 'POST',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ source_origin: sourceOrigin, description, updated_at: new Date().toISOString() }),
+      })
+    }
     ok++
     console.log(`✓ author [${sourceOrigin}]  (${ok + fail}/${pendingAuthors.length + pendingArticles.length})`)
   } catch (err) {
@@ -147,14 +176,29 @@ for (const sourceOrigin of pendingAuthors) {
   await new Promise((r) => setTimeout(r, DELAY_MS))
 }
 
+const existingArticleNames = new Set(existingArticles.map((a) => `${a.source_origin}\x00${a.base_title}`))
+
 for (const { sourceOrigin, baseTitle } of pendingArticles) {
   try {
     const background = await callAI(ARTICLE_BACKGROUND_PROMPT, `作者：${sourceOrigin}\n文章：${baseTitle}`)
-    await supaFetch('xz_du_articles', {
-      method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify({ source_origin: sourceOrigin, base_title: baseTitle, background, updated_at: new Date().toISOString() }),
-    })
+    if (!background) throw new Error('AI returned empty background')
+    const isExisting = existingArticleNames.has(`${sourceOrigin}\x00${baseTitle}`)
+    if (isExisting) {
+      await supaFetch(
+        `xz_du_articles?source_origin=eq.${encodeURIComponent(sourceOrigin)}&base_title=eq.${encodeURIComponent(baseTitle)}`,
+        {
+          method: 'PATCH',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify({ background, updated_at: new Date().toISOString() }),
+        }
+      )
+    } else {
+      await supaFetch('xz_du_articles', {
+        method: 'POST',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ source_origin: sourceOrigin, base_title: baseTitle, background, updated_at: new Date().toISOString() }),
+      })
+    }
     ok++
     console.log(`✓ article [${sourceOrigin} · ${baseTitle}]  (${ok + fail}/${pendingAuthors.length + pendingArticles.length})`)
   } catch (err) {
