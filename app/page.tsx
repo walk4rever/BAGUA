@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import styles from './page.module.css'
+import { StarMap } from './du/library/StarMap'
+import { getStarMapAuthors } from '@/lib/du-server'
 
 const features = [
   {
@@ -36,7 +38,9 @@ const features = [
   },
 ]
 
-export default function Home() {
+export default async function Home() {
+  const authors = await getStarMapAuthors().catch(() => [])
+
   return (
     <div className={`app ${styles.homeApp}`}>
       <header className={`hero ${styles.homeHero}`}>
@@ -71,6 +75,10 @@ export default function Home() {
             </div>
           </Link>
         ))}
+      </section>
+
+      <section className={styles.starMapSection}>
+        <StarMap authors={authors} />
       </section>
 
       <footer className={styles.footer}>

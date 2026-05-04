@@ -1,0 +1,154 @@
+.wrap {
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid var(--line-soft);
+  background: var(--paper-panel);
+}
+
+.header {
+  padding: 1.4rem 1.8rem 1rem;
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.title {
+  margin: 0 0 0.25rem;
+  font-size: 1.2rem;
+  color: var(--ink-0);
+  letter-spacing: 0.08rem;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+  letter-spacing: 0.08rem;
+}
+
+.skyWrap {
+  position: relative;
+  height: 340px;
+  width: 100%;
+  background:
+    radial-gradient(ellipse at 15% 40%, rgba(180, 160, 200, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 25%, rgba(140, 180, 200, 0.06) 0%, transparent 50%),
+    linear-gradient(180deg, #f9f5ee 0%, #f4ede0 100%);
+  overflow: hidden;
+  cursor: default;
+}
+
+.dynastyLabel {
+  position: absolute;
+  bottom: 10px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.dynastyLabel:first-of-type {
+  transform: translateX(-20%);
+}
+
+.dynastyLabel:last-of-type {
+  transform: translateX(-80%);
+}
+
+.dynastyName {
+  font-size: 0.72rem;
+  color: var(--ink-2);
+  letter-spacing: 0.06rem;
+  line-height: 1;
+}
+
+.dynastyLine {
+  position: absolute;
+  top: 0;
+  bottom: 30px;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(122, 104, 86, 0.12) 30%,
+    rgba(122, 104, 86, 0.12) 80%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.star {
+  position: absolute;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+  opacity: 0.82;
+}
+
+.star:hover {
+  transform: translate(-50%, -50%) scale(1.7);
+  opacity: 1;
+  z-index: 10;
+}
+
+.tooltip {
+  z-index: 100;
+  padding: 0.5rem 0.9rem;
+  background: rgba(36, 31, 27, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.tooltipName {
+  font-size: 1rem;
+  color: rgba(245, 235, 210, 0.96);
+  letter-spacing: 0.08rem;
+}
+
+.tooltipMeta {
+  font-size: 0.76rem;
+  color: rgba(200, 185, 155, 0.78);
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.1rem;
+  padding: 0.85rem 1.6rem;
+  border-top: 1px solid var(--line-faint);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+  font-size: 0.73rem;
+  color: var(--ink-2);
+  letter-spacing: 0.04rem;
+}
+
+.legendDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .skyWrap {
+    height: 280px;
+  }
+}

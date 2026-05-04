@@ -877,6 +877,35 @@ export type ArticleEntryAdmin = {
   segments: SegmentEntry[]
 }
 
+export type StarMapAuthor = {
+  name: string
+  dynasty: string
+  year: number
+  article_count: number
+  total_chars: number
+}
+
+export type AuthorProfile = {
+  source_origin: string
+  description: string | null
+  dynasty: string | null
+  approx_year: number | null
+  article_count: number | null
+  total_chars: number | null
+  updated_at: string
+}
+
+export type AuthorArticleEntry = {
+  base_title: string
+  first_id: number
+  segment_count: number
+  theme: string | null
+}
+
+export type AuthorArticleTitle = {
+  base_title: string
+}
+
 const parseBaseTitle = (title: string): string => title.replace(/（\d+）$/, '')
 
 export const getLibraryVolumes = async (): Promise<VolumeInfo[]> => {
@@ -959,6 +988,95 @@ export const getVolumePassagesAdmin = async (volume: number): Promise<ArticleEnt
   }
 
   return Array.from(map.values())
+}
+
+// ---------------------------------------------------------------------------
+// Library — star map data
+// ---------------------------------------------------------------------------
+const normalizeDynasty = (dynasty: string, year: number): string => {
+  const cleaned = dynasty.trim()
+  const aliasMap: Record<string, string> = {
+    唐: '隋唐',
+    秦汉: '汉',
+    魏晋南北朝: '南北朝',
+  }
+  const aliased = aliasMap[cleaned] ?? cleaned
+  const allowed = new Set(['先秦', '秦', '汉', '魏晋', '南北朝', '隋唐', '宋', '元', '明', '清'])
+  if (allowed.has(aliased)) return aliased
+
+  if (year <= -221) return '先秦'
+  if (year <= -206) return '秦'
+  if (year <= 220) return '汉'
+  if (year <= 420) return '魏晋'
+  if (year <= 589) return '南北朝'
+  if (year <= 960) return '隋唐'
+  if (year <= 1279) return '宋'
+  if (year <= 1368) return '元'
+  if (year <= 1644) return '明'
+  return '清'
+}
+
+export const getStarMapAuthors = async (): Promise<StarMapAuthor[]> => {
+  const rows = await supabaseFetch<Array<{
+    source_origin: string
+    dynasty: string | null
+    approx_year: number | null
+    article_count: number | null
+    total_chars: number | null
+  }>>(
+    'xz_du_authors?select=source_origin,dynasty,approx_year,article_count,total_chars&order=approx_year.asc&limit=9999'
+  )
+
+  return rows
+    .filter((row) => row.dynasty !== null && row.approx_year !== null)
+    .map((row) => ({
+      name: row.source_origin,
+      dynasty: normalizeDynasty(row.dynasty!, row.approx_year!),
+      year: row.approx_year!,
+      article_count: row.article_count ?? 0,
+      total_chars: row.total_chars ?? 0,
+    }))
+}
+
+export const getAuthorProfile = async (sourceOrigin: string): Promise<AuthorProfile | null> => {
+  const rows = await supabaseFetch<AuthorProfile[]>(
+    `xz_du_authors?select=source_origin,description,dynasty,approx_year,article_count,total_chars,updated_at&source_origin=eq.${encodeURIComponent(sourceOrigin)}&limit=1`
+  )
+  return rows[0] ?? null
+}
+
+export const getAuthorArticles = async (sourceOrigin: string): Promise<AuthorArticleEntry[]> => {
+  const rows = await supabaseFetch<{ id: number; title: string | null; theme: string | null }[]>(
+    `xz_du_passages?select=id,title,theme&enabled=eq.true&source_origin=eq.${encodeURIComponent(sourceOrigin)}&order=id.asc&limit=9999`
+  )
+
+  const map = new Map<string, AuthorArticleEntry>()
+  for (const row of rows) {
+    const base = parseBaseTitle(row.title ?? '')
+    if (!map.has(base)) {
+      map.set(base, { base_title: base, first_id: row.id, segment_count: 0, theme: row.theme ?? null })
+    }
+    const item = map.get(base)!
+    item.segment_count += 1
+    if (!item.theme && row.theme) item.theme = row.theme
+  }
+
+  return Array.from(map.values())
+}
+
+export const getAuthorArticleTitles = async (sourceOrigin: string): Promise<AuthorArticleTitle[]> => {
+  const rows = await supabaseFetch<{ base_title: string | null }[]>(
+    `xz_du_articles?select=base_title&source_origin=eq.${encodeURIComponent(sourceOrigin)}&order=base_title.asc&limit=9999`
+  )
+  const seen = new Set<string>()
+  const result: AuthorArticleTitle[] = []
+  for (const row of rows) {
+    const base = (row.base_title ?? '').trim()
+    if (!base || seen.has(base)) continue
+    seen.add(base)
+    result.push({ base_title: base })
+  }
+  return result
 }
 
 // ---------------------------------------------------------------------------
