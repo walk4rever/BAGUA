@@ -37,6 +37,7 @@ if (!supabaseUrl || !serviceRoleKey || !aiApiKey || !aiBaseUrl || !aiModel) {
 
 const BATCH_SIZE = 5
 const DELAY_MS = 300
+const DEFAULT_CONCURRENCY = 3
 
 // ---------------------------------------------------------------------------
 // Types
@@ -212,12 +213,14 @@ const argv = process.argv.slice(2)
 const limitArg = argv.find((a) => a.startsWith('--limit='))
 const idArg = argv.find((a) => a.startsWith('--id='))
 const volumeArg = argv.find((a) => a.startsWith('--volume='))
+const concurrencyArg = argv.find((a) => a.startsWith('--concurrency='))
 const limit = limitArg ? parseInt(limitArg.replace('--limit=', ''), 10) : 9999
 const targetId = idArg ? parseInt(idArg.replace('--id=', ''), 10) : undefined
 const targetVolume = volumeArg ? parseInt(volumeArg.replace('--volume=', ''), 10) : undefined
+const concurrency = concurrencyArg ? parseInt(concurrencyArg.replace('--concurrency=', ''), 10) : DEFAULT_CONCURRENCY
 
 const passages = await fetchPassages(limit, targetId, targetVolume)
-console.log(`Found ${passages.length} passages to process (batch_size=${targetId ? 1 : BATCH_SIZE})`)
+console.log(`Found ${passages.length} passages to process (batch_size=${targetId ? 1 : BATCH_SIZE}, concurrency=${targetId ? 1 : concurrency})`)
 
 let success = 0
 let failed = 0
@@ -244,9 +247,14 @@ if (targetId !== undefined) {
 }
 
 // 批量模式
+const allBatches: Passage[][] = []
 for (let i = 0; i < passages.length; i += BATCH_SIZE) {
-  const batch = passages.slice(i, i + BATCH_SIZE)
-  const batchLabel = `[batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(total / BATCH_SIZE)}] ${batch[0].source_origin} · ${batch[0].title} … (${batch.length}条)`
+  allBatches.push(passages.slice(i, i + BATCH_SIZE))
+}
+const totalBatches = allBatches.length
+
+const processBatch = async (batch: Passage[], batchNum: number): Promise<void> => {
+  const batchLabel = `[batch ${batchNum}/${totalBatches}] ${batch[0].source_origin} · ${batch[0].title} … (${batch.length}条)`
 
   let results: Array<DuOutput | null> | null = null
   const batchStart = Date.now()
@@ -276,7 +284,6 @@ for (let i = 0; i < passages.length; i += BATCH_SIZE) {
         console.error(`  ✗ ${label}: save failed: ${err instanceof Error ? err.message : err}`)
       }
     } else {
-      // 批量失败或该条解析失败，降级单条
       const singleStart = Date.now()
       try {
         const payload = await callAISingle(p)
@@ -292,8 +299,12 @@ for (let i = 0; i < passages.length; i += BATCH_SIZE) {
       }
     }
   }
+}
 
-  if (i + BATCH_SIZE < passages.length) {
+for (let i = 0; i < allBatches.length; i += concurrency) {
+  const chunk = allBatches.slice(i, i + concurrency)
+  await Promise.all(chunk.map((batch, j) => processBatch(batch, i + j + 1)))
+  if (i + concurrency < allBatches.length) {
     await new Promise((r) => setTimeout(r, DELAY_MS))
   }
 }
